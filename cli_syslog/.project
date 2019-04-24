@@ -3,6 +3,7 @@
 	<name>cli_syslog</name>
 	<comment></comment>
 	<projects>
+		<project>libappsyslog</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

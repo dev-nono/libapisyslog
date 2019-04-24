@@ -5,9 +5,9 @@
  *      Author: bruno
  */
 
-#ifndef LIBAPPSYSLOG_H_
-#define LIBAPPSYSLOG_H_
+#ifndef LIBAPISYSLOG_H_
+#define LIBAPISYSLOG_H_
 
 int readConfig(const char* a_ConfigFilemame);
 
-#endif /* LIBAPPSYSLOG_H_ */
+#endif /* LIBAPISYSLOG_H_ */

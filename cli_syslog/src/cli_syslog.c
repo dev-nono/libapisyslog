@@ -11,7 +11,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(void) {
-	puts("!!!Hello World!!!"); /* prints !!!Hello World!!! */
-	return EXIT_SUCCESS;
+#include "libapisyslog.h"
+
+
+int main( int argc, char* argv[] )
+{
+	int result = EXIT_SUCCESS;
+
+	result = readConfig( "");
+
+	return result;
 }
