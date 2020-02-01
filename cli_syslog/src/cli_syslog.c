@@ -18,7 +18,7 @@ int main( int argc, char* argv[] )
 {
 	int result = EXIT_SUCCESS;
 
-	result = readConfig( "");
+	result = apisyslog_init( "");
 
 	return result;
 }

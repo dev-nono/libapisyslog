@@ -16,31 +16,31 @@ sConfigSyslog_t gConfig;
 //*********************************************************
 //*
 //*********************************************************
-static int Initilise()
+int apisyslog_init(const char* a_ConfigFilemame)
 {
 	int result = 0;
 
 	memset(&gConfig,0,sizeof(gConfig));
 
+	strncpy(gConfig.configFilename,a_ConfigFilemame,PATH_MAX-1);
+
+	result = apisyslog_StartThread();
+
+
 	return result;
 }
+
 
 //*********************************************************
 //*
 //*********************************************************
-int readConfig(const char* a_ConfigFilemame)
+int apisyslog_release()
 {
 	int result = 0;
-
-	result = Initilise();
-
-	if( 0 == result )
-	{
-		strncpy(gConfig.configFilename,a_ConfigFilemame, PATH_MAX -1);
-	}
-
 
 
 	return result;
 }
+
+
 

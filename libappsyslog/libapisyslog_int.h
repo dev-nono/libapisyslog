@@ -17,9 +17,7 @@ struct sConfigSyslog
 };
 typedef struct sConfigSyslog sConfigSyslog_t;
 
-
-static int Initilise();
-
+int apisyslog_StartThread();
 
 
 #endif /* LIBAPISYSLOG_INT_H_ */
