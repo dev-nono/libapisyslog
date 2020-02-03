@@ -3,7 +3,7 @@
 	<name>cli_syslog</name>
 	<comment></comment>
 	<projects>
-		<project>libappsyslog</project>
+		<project>apisyslog</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -5,8 +5,8 @@
  *      Author: bruno
  */
 
-#include "libapisyslog_int.h"
-#include "libapisyslog.h"
+#include "apisyslog_int.h"
+#include "apisyslog.h"
 
 #include <string.h>
 
@@ -26,6 +26,7 @@ int32_t apisyslog_init(const char* a_ConfigFilemame)
 
 	result = apisyslog_StartThread();
 
+	gConfig.flag = APISYSLOG_TRACE_INOUT | APISYSLOG_TRACE_1;
 
 	return result;
 }
@@ -47,9 +48,23 @@ int32_t apisyslog_release()
 //*********************************************************
 int32_t apisyslog_StartThread()
 {
-	int result = 0;
+	int32_t result = 0;
 
 
 	return result;
 }
+//*********************************************************
+//*
+//*********************************************************
+int32_t apisyslog_getflag(uint64_t a_flag)
+{
+	int32_t result = 0;
+
+
+	result = gConfig.flag & a_flag;
+
+	return result;
+
+}
+
 

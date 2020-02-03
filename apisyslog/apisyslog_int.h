@@ -8,12 +8,13 @@
 #ifndef LIBAPISYSLOG_INT_H_
 #define LIBAPISYSLOG_INT_H_
 
-#include <stdint-gcc.h>
+#include <stdint.h>
 #include "limits.h"
 
 struct sConfigSyslog
 {
-	char configFilename[PATH_MAX];
+	char 		configFilename[PATH_MAX];
+	uint64_t	flag;
 
 };
 typedef struct sConfigSyslog sConfigSyslog_t;
