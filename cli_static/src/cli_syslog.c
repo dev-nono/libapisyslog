@@ -12,8 +12,9 @@
 #include <stdlib.h>
 
 #include "apisyslog.h"
-
 #include "apisyslog_int.h"
+
+//#include "apisyslog_int.h"
 extern sConfigSyslog_t gConfig;
 
 
