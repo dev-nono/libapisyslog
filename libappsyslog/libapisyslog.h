@@ -8,7 +8,17 @@
 #ifndef LIBAPISYSLOG_H_
 #define LIBAPISYSLOG_H_
 
-int apisyslog_init(const char* a_ConfigFilemame);
-int apisyslog_release();
+#include <stdint-gcc.h>
+
+
+#define APISYSLOG_TRACE_INOUT 	(1 << 0 )
+#define APISYSLOG_TRACE_1 		(1 << 1 )
+
+
+
+int32_t apisyslog_init(const char* a_ConfigFilemame);
+int32_t apisyslog_release();
+
+
 
 #endif /* LIBAPISYSLOG_H_ */

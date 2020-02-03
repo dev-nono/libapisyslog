@@ -16,9 +16,9 @@ sConfigSyslog_t gConfig;
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_init(const char* a_ConfigFilemame)
+int32_t apisyslog_init(const char* a_ConfigFilemame)
 {
-	int result = 0;
+	int32_t result = 0;
 
 	memset(&gConfig,0,sizeof(gConfig));
 
@@ -34,13 +34,22 @@ int apisyslog_init(const char* a_ConfigFilemame)
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_release()
+int32_t apisyslog_release()
+{
+	int32_t result = 0;
+
+
+	return result;
+}
+
+//*********************************************************
+//*
+//*********************************************************
+int32_t apisyslog_StartThread()
 {
 	int result = 0;
 
 
 	return result;
 }
-
-
 

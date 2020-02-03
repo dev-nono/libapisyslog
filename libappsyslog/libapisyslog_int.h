@@ -8,6 +8,7 @@
 #ifndef LIBAPISYSLOG_INT_H_
 #define LIBAPISYSLOG_INT_H_
 
+#include <stdint-gcc.h>
 #include "limits.h"
 
 struct sConfigSyslog
@@ -17,7 +18,7 @@ struct sConfigSyslog
 };
 typedef struct sConfigSyslog sConfigSyslog_t;
 
-int apisyslog_StartThread();
+int32_t apisyslog_StartThread();
 
 
 #endif /* LIBAPISYSLOG_INT_H_ */

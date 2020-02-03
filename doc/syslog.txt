@@ -1,0 +1,66 @@
+
+
+# ******************************************************************
+#  debug
+# ******************************************************************
+$template DebugTemplate, "%TIMESTAMP:12:26:date-rfc3339%  %msg%\n"
+local7.*                /var/log/ldb/debug.log;DebugTemplate
+
+
+==============================================================================
+
+
+
+#               Properties inside templates
+#               ---------------------------
+
+# Properties can be modified by the property replacer. They are accessed
+# inside the template by putting them between percent signs. The full syntax is as follows:
+
+#     %propname:fromChar:toChar:options%
+
+# FromChar and toChar are used to build substrings. 
+# If you need to obtain the first 2 characters of the
+# message text, you can use this syntax: 
+"%msg:1:2%".
+# If you do not whish to specify from and to, but you want to
+# specify options, you still need to include the colons. 
+
+# For example, to convert the full message text to lower case only, use 
+#     "%msg:::lowercase%".
+
+# The full list of property options can be found in rsyslog.conf(5) manpage
+
+
+
+
+service rsyslog restart
+
+
+*******************************************
+
+local7.*                /var/log/ldb/debug.log;DebugTemplate
+
+
+
+$template LandisLogFormat, "%TIMESTAMP:12:26:date-rfc3339%  %msg%\n"
+   => 05:12:51.681669   MsgMgrListThrea[19918]: CMessagingManager::ConnectionThread_2
+
+
+$template LandisLogFormat, "<%PRI%> 1  %TIMESTAMP%  %HOSTNAME% %msg%\n"
+ =>Sep  2 19:29:51   Debug[30829]: passage1
+
+
+$template LandisLogFormat, "<%PRI%> 1  %TIMESTAMP:::date-rfc3339%  %HOSTNAME% %msg%\n"
+  => 2017-09-02T19:30:49.859783+00:00 <191>  Debug[31009]: passage1
+
+
+$template LandisLogFormat, " %timegenerated% %msg%\n"
+ Sep  2 19:31:56  Debug[31189]: passage3
+
+$template LandisLogFormat, " %timegenerated::fulltime% %msg%\n"
+ =>Sep  2 19:34:30  Debug[31368]: passage1
+ 
+$template DebugTemplate, "%TIMESTAMP:12:26:date-rfc3339%  %msg%\n"
+	=>19:54:15.352767   Debug[1049]: passage1
+

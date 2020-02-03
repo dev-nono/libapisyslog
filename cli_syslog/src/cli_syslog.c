@@ -20,5 +20,10 @@ int main( int argc, char* argv[] )
 
 	result = apisyslog_init( "");
 
+	//if ( apisyslog_is)
+
+
+	result = apisyslog_release();
+
 	return result;
 }
