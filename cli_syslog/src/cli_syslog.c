@@ -21,7 +21,7 @@ int main( int argc, char* argv[] )
 	int result = EXIT_SUCCESS;
 
 	result = apisyslog_init( "");
-
+printf("argv0%s\n",argv[0]);
 	TRACE_IN("IN")
 
 	result = apisyslog_release();
