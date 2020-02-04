@@ -85,7 +85,7 @@ int32_t apisyslog_getflag(uint64_t a_flag)
 int32_t apisyslog_PrintLog(const char *pszCompName, const char *a_pszFmt, ...)
 {
 	char 				vMessage[255];
-	char 				vMessageArg[512];
+	char 				vMessageToPrint[512];
 	//
 	int vNBuf = 0;
 	int					vRetcode			= 0;
@@ -110,11 +110,17 @@ int32_t apisyslog_PrintLog(const char *pszCompName, const char *a_pszFmt, ...)
 	//						vMessage);
 	//		fflush(getFdLog());
 
-	snprintf( vMessageArg, 512-1 , "%d %s",
+
+	//*********SYSLOG****########### APP #####
+	// date				 TID   function	MESSAGE
+	// 10:34:03.757525   14588 foo_ 		OUT_1 result = 1
+
+	snprintf( vMessageToPrint, 512-1 , "%d %s %s",
 			(int)syscall(SYS_gettid),
+			pszCompName,
 			vMessage);
 
-	syslog(LOG_DEBUG,"%s",vMessageArg);
+	syslog(LOG_DEBUG,"%s",vMessageToPrint);
 
 	va_end(pVa_list);
 

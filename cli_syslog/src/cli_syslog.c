@@ -12,7 +12,6 @@
 #include <stdlib.h>
 
 #include "apisyslog.h"
-
 #include "apisyslog_int.h"
 //extern sConfigSyslog_t gConfig;
 
@@ -23,14 +22,12 @@ int main( int argc, char* argv[] )
 
 	result = apisyslog_init( "");
 
-	TRACE_IN("main_IN_1")
-	TRACE_OUT("main_OUT_1 result = %d",result)
-
+	TRACE_IN("IN")
 
 	result = apisyslog_release();
 
 
-	//TRACE_OUT("main_OUT",result)
+	TRACE_OUT("OUT result = %d",result)
 
 	return result;
 }

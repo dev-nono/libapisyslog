@@ -17,13 +17,16 @@
 #define APISYSLOG_TRACE_2 		(1 << 2 )
 
 #define TRACE_IN(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_INOUT) )\
-	{ apisyslog_PrintLog("%s",arg_1);}
+	{ apisyslog_PrintLog(__FUNCTION__, arg_1);}
 
 #define TRACE_OUT(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_INOUT) )\
-	{ apisyslog_PrintLog("%s",arg_1);}
+	{ apisyslog_PrintLog(__FUNCTION__, arg_1);}
 
-#define TRACE_DBG1(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_1) ){ printf("%s\n",arg_1);}
-#define TRACE_DBG2(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_2) ){ printf("%s\n",arg_1);}
+#define TRACE_DBG1(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_1) )\
+	{ apisyslog_PrintLog(__FUNCTION__, arg_1);}
+#define TRACE_DBG2(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_2) )\
+			{ apisyslog_PrintLog(__FUNCTION__, arg_1);}
+
 
 int32_t apisyslog_init(const char* a_ConfigFilemame);
 int32_t apisyslog_release();
