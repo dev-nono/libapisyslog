@@ -15,7 +15,7 @@
 #include "apisyslog_int.h"
 
 //#include "apisyslog_int.h"
-extern sConfigSyslog_t gConfig;
+//extern sConfigSyslog_t gConfig;
 
 
 int main( int argc, char* argv[] )

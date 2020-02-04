@@ -5,6 +5,10 @@
  *      Author: bruno
  */
 
+#define _GNU_SOURCE         /* Consultez feature_test_macros(7) */
+#include <unistd.h>
+#include <sys/syscall.h>   /* Pour les définitions de SYS_xxx */
+
 #include <errno.h>
 #include <stdarg.h>
 #include <sys/time.h>
@@ -80,18 +84,19 @@ int32_t apisyslog_getflag(uint64_t a_flag)
 
 int32_t apisyslog_PrintLog(const char *pszCompName, const char *a_pszFmt, ...)
 {
-	char 				vMessage[512];
+	char 				vMessage[255];
 	char 				vMessageArg[512];
 	//
-	__attribute__((unused)) int vNBuf = 0;
+	int vNBuf = 0;
 	int					vRetcode			= 0;
 	va_list 			pVa_list;
 	//struct timeval		vTimeval;
 
+	(void)vNBuf;
 	va_start(pVa_list, a_pszFmt);
 
 	// Format user arguments
-	vNBuf = vsnprintf(vMessage , 512, a_pszFmt, pVa_list);
+	vNBuf = vsnprintf(vMessage , 255, a_pszFmt, pVa_list);
 
 //	gettimeofday(&vTimeval,0);
 	//		fprintf(getFdLog(),
@@ -105,7 +110,7 @@ int32_t apisyslog_PrintLog(const char *pszCompName, const char *a_pszFmt, ...)
 	//						vMessage);
 	//		fflush(getFdLog());
 
-	snprintf(vMessageArg,512,"%d %s",
+	snprintf( vMessageArg, 512-1 , "%d %s",
 			(int)syscall(SYS_gettid),
 			vMessage);
 
