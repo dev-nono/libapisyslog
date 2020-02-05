@@ -14,7 +14,9 @@
 #define APISYSLOG_TAG_SIZE 255
 struct sConfigSyslog
 {
-	char 		configFilename[PATH_MAX];
+	char 		basename[PATH_MAX];
+	char 		dirname[PATH_MAX];
+	char 		filename[PATH_MAX];
 	uint64_t	flag;
 	char		prefix[100];
 	pthread_t	thread_id;
@@ -32,8 +34,7 @@ struct sTagId
 
 int apisyslog_StartThread();
 int apisyslog_readFile();
-int apisyslog_ConfigureInotify();
-int apisyslog_parseMessage(const char* a_Buffer);
+int apisyslog_CheckModify(const char* a_Buffer);
 int apisyslog_findTag(const char* a_Buffer);
 
 

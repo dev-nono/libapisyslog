@@ -45,24 +45,30 @@ int apisyslog_init(const char* a_ConfigFilemame)
 	int result = 0;
 	char 	*pathname = 0;
 	char 	linkbuf[PATH_MAX];
+	char 	filename[PATH_MAX];
 
 	memset(&gConfig,0,sizeof(gConfig));
-	memset(linkbuf,0,sizeof(linkbuf));
 
 	if( *a_ConfigFilemame == 0 )
 	{
 		readlink("/proc/self/exe", linkbuf, PATH_MAX-1);
+		strcpy(filename,linkbuf);
 		pathname = dirname(linkbuf);
-		snprintf(gConfig.configFilename,PATH_MAX-1,"%s/debugtrace.conf", pathname);
+
+		snprintf(gConfig.dirname,PATH_MAX-1,"%s",pathname);
+		snprintf(gConfig.basename,PATH_MAX-1,"debugtrace.conf");
 	}
 	else
 	{
-		strncpy(gConfig.configFilename,a_ConfigFilemame,PATH_MAX-1);
+		strcpy(filename,a_ConfigFilemame);
+		pathname = basename(filename);
+		strncpy(gConfig.basename,filename,PATH_MAX-1);
 	}
+	snprintf(gConfig.filename,PATH_MAX-1,"%s/%s",gConfig.dirname,gConfig.basename);
+
 	strncpy(gConfig.prefix,"PREFIX",100-1);
 
 	openlog(gConfig.prefix, LOG_NDELAY | LOG_PID , LOG_LOCAL7);
-
 
 	result = apisyslog_StartThread();
 
@@ -89,18 +95,35 @@ static void * apisyslog_thread_body(void *arg)
 	int		result	= 0;
 	char 	buffer[EVENT_BUF_LEN];
 
+    fd_set rfds;
+
 	(void)result;
 
 	result = apisyslog_readFile();
 
-	result = apisyslog_ConfigureInotify();
+	gConfig.fdInit = inotify_init1(IN_CLOEXEC);
 
 	do
 	{
-		result = read(gConfig.fdInit,buffer,EVENT_BUF_LEN);
+		gConfig.fdWatch = inotify_add_watch( 	gConfig.fdInit,
+				gConfig.dirname,
+				IN_MODIFY //| IN_CLOSE_WRITE
+				);
 
-		result = apisyslog_parseMessage(buffer);
+	    FD_ZERO(&rfds);
+	    FD_SET(gConfig.fdInit , &rfds);
 
+		result = select(gConfig.fdInit+1, &rfds, NULL, NULL, NULL);
+
+		inotify_rm_watch( gConfig.fdInit, gConfig.fdWatch);
+
+		result = read(gConfig.fdInit ,buffer,EVENT_BUF_LEN);
+
+		result = apisyslog_CheckModify(buffer);
+		if( result > 0 )
+		{
+			apisyslog_readFile();
+		}
 	}while(1);
 
 	inotify_rm_watch( gConfig.fdInit, gConfig.fdWatch);
@@ -113,29 +136,23 @@ static void * apisyslog_thread_body(void *arg)
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_parseMessage(const char* a_Buffer)
+int apisyslog_CheckModify(const char* a_Buffer)
 {
 	int result 	= 0;
 	int ii 		= 0;
 
-	inotify_rm_watch( gConfig.fdInit, gConfig.fdWatch);
-	close(gConfig.fdWatch);
-
 	while ( ii < EVENT_BUF_LEN )
 	{
 		struct inotify_event *event = ( struct inotify_event * ) &a_Buffer[ ii ];
-		if ( ( event->len ) && (event->mask & IN_MODIFY))
+		if ( ( event->mask != 0 )
+			&& ( 0 == strcmp( event->name,gConfig.basename)))
 		{
-			result = apisyslog_release();
+			printf("mask=%X name=%s \n",event->mask,event->name);
+			result = 1;
 			break; // one event need
 		}
 		ii += EVENT_SIZE + event->len;
 	}
-
-	gConfig.fdWatch = inotify_add_watch( 	gConfig.fdInit,
-			gConfig.configFilename,
-			IN_MODIFY);
-
 	return result;
 }
 //*********************************************************
@@ -148,12 +165,16 @@ int apisyslog_readFile()
 	char 	buffer[APISYSLOG_TAG_SIZE];
 	char*	pBuffer = 0;
 	char 	buffTag[APISYSLOG_TAG_SIZE];
-	char 	buffTagValue[APISYSLOG_TAG_SIZE];
+//	char 	buffTagValue[APISYSLOG_TAG_SIZE];
+	int 	buffTagValue = 0;
 	int		lenBuff = 0;
 
 	int		bitTag = 0;
+	gConfig.flag = 0;
 
-	fd = fopen(gConfig.configFilename,"rt");
+//	printf("apisyslog_readFile \n");
+
+	fd = fopen(gConfig.filename,"rt");
 
 	if( fd == 0 )
 	{
@@ -161,12 +182,12 @@ int apisyslog_readFile()
 	}
 	else
 	{
+
 		while ( ! feof( fd ) )
 		{
 			memset(buffTag,0,sizeof(buffTag));
-			memset(buffTagValue,0,sizeof(buffTagValue));
+			//memset(buffTagValue,0,sizeof(buffTagValue));
 			memset(buffer,0,sizeof(buffer));
-
 
 			fgets(buffer,APISYSLOG_TAG_SIZE,fd);
 
@@ -175,15 +196,16 @@ int apisyslog_readFile()
 			if( buffer[lenBuff-1] == '\n')
 				buffer[lenBuff-1] = 0;
 
-			sscanf(buffer,"%[^=]=%s",buffTag,buffTagValue);
+			sscanf(buffer,"%[^=]=%d",buffTag,&buffTagValue);
 
 			bitTag = apisyslog_findTag(buffTag);
 
-			printf("buffTag=%s buffTagValue=%s bitTag=%d\n",buffTag,buffTagValue,bitTag);
 
-			if( bitTag >= 0 )
+			if(		( bitTag >= 0 )
+				&& 	( buffTagValue != 0) )
 			{
 				gConfig.flag |=  gArrayTagId[bitTag].id;
+				printf("buffTag=%s buffTagValue=%s bitTag=%d\n",buffTag,buffTagValue,bitTag);
 			}
 		}
 	}
@@ -195,7 +217,6 @@ int apisyslog_readFile()
 
 	return result;
 }
-
 //*********************************************************
 //*
 //*********************************************************
@@ -228,34 +249,6 @@ int apisyslog_findTag(const char* a_Buffer)
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_ConfigureInotify()
-{
-	int result = 0;
-
-
-	gConfig.fdInit = inotify_init1(IN_CLOEXEC);
-
-	if ( gConfig.fdInit < 0 )
-	{
-		fprintf(stderr,"Error inotify_init()  err<=%d %s",errno, strerror(errno) );
-		result = errno;
-	}
-	if( result == 0)
-	{
-		gConfig.fdWatch = inotify_add_watch( 	gConfig.fdInit,
-				gConfig.configFilename,
-				IN_MODIFY);
-	}
-
-	return result;
-}
-//*********************************************************
-//*
-//*********************************************************
-
-//*********************************************************
-//*
-//*********************************************************
 int apisyslog_StartThread()
 {
 	int result 	= 0;
@@ -281,9 +274,6 @@ int apisyslog_StartThread()
 	//Destroy the thread attributes object, since it is no longer needed
 	pthread_attr_destroy(&attr);
 
-	/* Now join with each thread, and display its returned value */
-	result  = pthread_join(gConfig.thread_id, NULL);
-
 	return result;
 }
 //*********************************************************
@@ -292,13 +282,15 @@ int apisyslog_StartThread()
 int apisyslog_getflag(uint64_t a_flag)
 {
 	int result = 0;
-
 	result = gConfig.flag & a_flag;
+
+	printf("apisyslog_getflag %X result=%d\n",gConfig.flag,result);
 
 	return result;
 }
-
-
+//*********************************************************
+//*
+//*********************************************************
 int apisyslog_PrintLog(const char *pszCompName, const char *a_pszFmt, ...)
 {
 	char 				vMessage[255];

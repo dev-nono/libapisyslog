@@ -10,6 +10,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 
 #include "apisyslog.h"
 #include "apisyslog_int.h"
@@ -20,12 +22,28 @@ int main( int argc, char* argv[] )
 {
 	int result = EXIT_SUCCESS;
 
+	#define BUF_SIZE 255
+	char buffer[BUF_SIZE-1];
+	char *pBuff = 0;
+
 	result = apisyslog_init( "");
-printf("argv0%s\n",argv[0]);
+
+	printf("argv0 = %s\n",argv[0]);
+
 	TRACE_IN("IN")
 
-	result = apisyslog_release();
+	//result = apisyslog_release();
 
+	do
+	{
+		memset(buffer,0,sizeof(buffer));
+
+		pBuff = fgets(buffer,BUF_SIZE-1,stdin);
+
+		TRACE_DBG1("DBG1 %s", buffer);
+		TRACE_DBG2("DBG2 %s", buffer);
+
+	}while(1);
 
 	TRACE_OUT("OUT result = %d",result)
 
