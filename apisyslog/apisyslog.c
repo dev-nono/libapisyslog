@@ -52,19 +52,19 @@ int apisyslog_init(const char* a_ConfigFilemame)
 	if( *a_ConfigFilemame == 0 )
 	{
 		readlink("/proc/self/exe", linkbuf, PATH_MAX-1);
-		strcpy(filename,linkbuf);
+		strncpy(filename,linkbuf,APISYSLOG_TAG_SIZE-1);
 		pathname = dirname(linkbuf);
 
 		snprintf(gConfig.dirname,PATH_MAX-1,"%s",pathname);
-		snprintf(gConfig.basename,PATH_MAX-1,"debugtrace.conf");
+		snprintf(gConfig.basename,APISYSLOG_TAG_SIZE-1,"debugtrace.conf");
 	}
 	else
 	{
-		strcpy(filename,a_ConfigFilemame);
+		strncpy(filename,a_ConfigFilemame,PATH_MAX-1);
 		pathname = basename(filename);
-		strncpy(gConfig.basename,filename,PATH_MAX-1);
+		strncpy(gConfig.basename,filename,APISYSLOG_TAG_SIZE-1);
 	}
-	snprintf(gConfig.filename,PATH_MAX-1,"%s/%s",gConfig.dirname,gConfig.basename);
+	snprintf(gConfig.filename,PATH_MAX,"%s/%s",gConfig.dirname,gConfig.basename);
 
 	strncpy(gConfig.prefix,"PREFIX",100-1);
 
@@ -74,8 +74,6 @@ int apisyslog_init(const char* a_ConfigFilemame)
 
 	return result;
 }
-
-
 //*********************************************************
 //*
 //*********************************************************
@@ -94,8 +92,7 @@ static void * apisyslog_thread_body(void *arg)
 {
 	int		result	= 0;
 	char 	buffer[EVENT_BUF_LEN];
-
-    fd_set rfds;
+    fd_set 	rfds;
 
 	(void)result;
 
@@ -163,7 +160,7 @@ int apisyslog_readFile()
 	int 	result  = 0;
 	FILE* 	fd		= 0;
 	char 	buffer[APISYSLOG_TAG_SIZE];
-	char*	pBuffer = 0;
+//	char*	pBuffer = 0;
 	char 	buffTag[APISYSLOG_TAG_SIZE];
 //	char 	buffTagValue[APISYSLOG_TAG_SIZE];
 	int 	buffTagValue = 0;
@@ -205,7 +202,7 @@ int apisyslog_readFile()
 				&& 	( buffTagValue != 0) )
 			{
 				gConfig.flag |=  gArrayTagId[bitTag].id;
-				printf("buffTag=%s buffTagValue=%s bitTag=%d\n",buffTag,buffTagValue,bitTag);
+				printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
 			}
 		}
 	}
@@ -284,7 +281,7 @@ int apisyslog_getflag(uint64_t a_flag)
 	int result = 0;
 	result = gConfig.flag & a_flag;
 
-	printf("apisyslog_getflag %X result=%d\n",gConfig.flag,result);
+	printf("apisyslog_getflag %lX result=%X\n",gConfig.flag,result);
 
 	return result;
 }

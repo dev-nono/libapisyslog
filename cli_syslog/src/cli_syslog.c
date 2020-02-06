@@ -26,6 +26,8 @@ int main( int argc, char* argv[] )
 	char buffer[BUF_SIZE-1];
 	char *pBuff = 0;
 
+	(void)pBuff;
+
 	result = apisyslog_init( "");
 
 	printf("argv0 = %s\n",argv[0]);

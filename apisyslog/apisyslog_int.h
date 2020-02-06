@@ -14,8 +14,8 @@
 #define APISYSLOG_TAG_SIZE 255
 struct sConfigSyslog
 {
-	char 		basename[PATH_MAX];
-	char 		dirname[PATH_MAX];
+	char 		basename[APISYSLOG_TAG_SIZE];
+	char 		dirname[PATH_MAX-APISYSLOG_TAG_SIZE];
 	char 		filename[PATH_MAX];
 	uint64_t	flag;
 	char		prefix[100];
