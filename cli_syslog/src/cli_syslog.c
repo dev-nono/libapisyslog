@@ -44,6 +44,7 @@ int main( int argc, char* argv[] )
 
 		TRACE_DBG1("DBG1 %s", buffer);
 		TRACE_DBG2("DBG2 %s", buffer);
+        TRACE_DBG2("DBG22 %s", buffer);
 
 	}while(1);
 

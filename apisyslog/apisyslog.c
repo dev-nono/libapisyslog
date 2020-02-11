@@ -17,6 +17,7 @@
 #include <sys/inotify.h>
 #include <pthread.h>
 #include <libgen.h>
+#include <time.h>
 
 #include <string.h>
 
@@ -32,6 +33,9 @@ struct sTagId gArrayTagId[] =
         {"trace.inout", APISYSLOG_TRACE_INOUT},
         {"trace.dbg1", APISYSLOG_TRACE_1},
         {"trace.dbg2", APISYSLOG_TRACE_2},
+        {"trace.nano", APISYSLOG_TRACE_NANO},
+        {"trace.stdout", APISYSLOG_TRACE_STDOUT},
+        {"trace.stderr", APISYSLOG_TRACE_STDERR},
         {"", APISYSLOG_TRACE_END}
 };
 
@@ -144,7 +148,7 @@ int apisyslog_CheckModify(const char* a_Buffer)
         if ( ( event->mask != 0 )
                 && ( 0 == strcmp( event->name,gConfig.basename)))
         {
-            printf("mask=%X name=%s \n",event->mask,event->name);
+//            printf("mask=%X name=%s \n",event->mask,event->name);
             result = 1;
             break; // one event need
         }
@@ -202,7 +206,7 @@ int apisyslog_readFile()
                     && 	( buffTagValue != 0) )
             {
                 gConfig.flag |=  gArrayTagId[bitTag].id;
-                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
+//                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
             }
         }
     }
@@ -276,12 +280,12 @@ int apisyslog_StartThread()
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_getflag(uint64_t a_flag)
+uint64_t apisyslog_getflag(uint64_t a_flag)
 {
-    int result = 0;
+    uint64_t result = 0;
     result = gConfig.flag & a_flag;
 
-    printf("apisyslog_getflag %lX result=%X\n",gConfig.flag,result);
+//    printf("apisyslog_getflag %lX result=%lX\n",gConfig.flag,result);
 
     return result;
 }
@@ -291,6 +295,7 @@ int apisyslog_getflag(uint64_t a_flag)
 int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
 {
     char 				vMessage[255];
+    char                vNano[25];
     char 				vMessageToPrint[512];
     int 				vTid = (int)syscall(SYS_gettid);
     int vNBuf = 0;
@@ -318,15 +323,46 @@ int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
 
 
     //*********SYSLOG****########### APP #####
-    // date				 NANO TID   	function	MESSAGE
-    // 10:34:03.757525   10.123456789   14588 foo_ 		OUT_1 result = 1
+    // date				 NANO           TID   	function	MESSAGE
+    // 10:34:03.757525   10.123456789   14588   foo_ 		OUT_1 result = 1
 
-    snprintf( vMessageToPrint, 512-1 , "%d %s %s",
+    //*********************************************************
+    //              APISYSLOG_TRACE_NANO
+    //*********************************************************
+    *vNano = 0;
+    if( apisyslog_getflag( APISYSLOG_TRACE_NANO ) )
+    {
+        struct timespec vRes = {0,0};
+        vRetcode = clock_gettime(CLOCK_MONOTONIC_RAW,&vRes);
+        snprintf(vNano,25, "%4ld.%09ld",vRes.tv_sec,vRes.tv_nsec);
+    }
+
+    //*********************************************************
+    //              PRINT SYSLOG
+    //*********************************************************
+
+    snprintf( vMessageToPrint, 512-1 , "%s %5d %s %s",
+            vNano,
             vTid,
             pszFuncName,
             vMessage);
 
     syslog(LOG_DEBUG,"%s",vMessageToPrint);
+
+    //*********************************************************
+    //              APISYSLOG_TRACE_STDOUT
+    //*********************************************************
+    if( apisyslog_getflag( APISYSLOG_TRACE_STDOUT ) )
+    {
+        fprintf(stdout,"%s\n",vMessageToPrint);
+    }
+    //*********************************************************
+    //              APISYSLOG_TRACE_STDERR
+    //*********************************************************
+    if( apisyslog_getflag( APISYSLOG_TRACE_STDERR ) )
+    {
+        fprintf(stderr,"%s\n",vMessageToPrint);
+    }
 
     va_end(pVa_list);
 
