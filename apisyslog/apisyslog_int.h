@@ -17,12 +17,12 @@ struct sConfigSyslog
 	char 		basename[APISYSLOG_TAG_SIZE];
 	char 		dirname[PATH_MAX-APISYSLOG_TAG_SIZE];
 	char 		filename[PATH_MAX];
+    char        fifoname[PATH_MAX];
 	uint64_t	flag;
 	char		prefix[100];
 	pthread_t	thread_id;
 	int			fdInit;
 	int			fdWatch;
-
 };
 typedef struct sConfigSyslog sConfigSyslog_t;
 
@@ -35,7 +35,8 @@ struct sTagId
 int apisyslog_StartThread();
 int apisyslog_readFile();
 int apisyslog_CheckModify(const char* a_Buffer);
-int apisyslog_findTag(const char* a_Buffer);
+int apisyslog_findTagTrace(const char* a_Buffer);
+int apisyslog_findTagDebug(const char* a_Buffer);
 
 
 

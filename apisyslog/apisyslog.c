@@ -28,15 +28,24 @@
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
-struct sTagId gArrayTagId[] =
+struct sTagId gArrayTagIdTrace[] =
 {
-        {"trace.inout", APISYSLOG_TRACE_INOUT},
-        {"trace.dbg1", APISYSLOG_TRACE_1},
-        {"trace.dbg2", APISYSLOG_TRACE_2},
-        {"trace.nano", APISYSLOG_TRACE_NANO},
-        {"trace.stdout", APISYSLOG_TRACE_STDOUT},
-        {"trace.stderr", APISYSLOG_TRACE_STDERR},
-        {"", APISYSLOG_TRACE_END}
+        {"trace.inout",     APISYSLOG_TRACE_INOUT},
+        {"trace.dbg1",      APISYSLOG_TRACE_1},
+        {"trace.dbg2",      APISYSLOG_TRACE_2},
+
+        {"trace.nano",      APISYSLOG_TRACE_NANO},
+        {"trace.stdout",    APISYSLOG_TRACE_STDOUT},
+        {"trace.stderr",    APISYSLOG_TRACE_STDERR},
+        {"",                APISYSLOG_TRACE_END}
+};
+struct sTagId gArrayTagIdDebug[] =
+{
+        {APISYSLOG_DEBUG_FIFO,      0  },
+        {APISYSLOG_DEBUG_WAIT1,     APISYSLOG_DBG_WAIT1},
+        {APISYSLOG_DEBUG_WAIT2,     APISYSLOG_DBG_WAIT2},
+
+        {"",                APISYSLOG_TRACE_END}
 };
 
 sConfigSyslog_t gConfig;
@@ -148,7 +157,7 @@ int apisyslog_CheckModify(const char* a_Buffer)
         if ( ( event->mask != 0 )
                 && ( 0 == strcmp( event->name,gConfig.basename)))
         {
-//            printf("mask=%X name=%s \n",event->mask,event->name);
+            //            printf("mask=%X name=%s \n",event->mask,event->name);
             result = 1;
             break; // one event need
         }
@@ -166,8 +175,8 @@ int apisyslog_readFile()
     char 	buffer[APISYSLOG_TAG_SIZE];
     //	char*	pBuffer = 0;
     char 	buffTag[APISYSLOG_TAG_SIZE];
-    //	char 	buffTagValue[APISYSLOG_TAG_SIZE];
-    int 	buffTagValue = 0;
+    char 	buffTagValue[APISYSLOG_TAG_SIZE];
+    int 	vTagValue = 0;
     int		lenBuff = 0;
 
     int		bitTag = 0;
@@ -197,17 +206,41 @@ int apisyslog_readFile()
             if( buffer[lenBuff-1] == '\n')
                 buffer[lenBuff-1] = 0;
 
-            sscanf(buffer,"%[^=]=%d",buffTag,&buffTagValue);
+            //sscanf(buffer,"%[^=]=%d",buffTag,&buffTagValue);
+            sscanf(buffer,"%[^=]=%s",buffTag,&buffTagValue);
 
-            bitTag = apisyslog_findTag(buffTag);
+            // ******************************************
+            //      TRACE
+            // ******************************************
+            bitTag = apisyslog_findTagTrace(buffTag);
 
-
-            if(		( bitTag >= 0 )
-                    && 	( buffTagValue != 0) )
+            if( bitTag >= 0 )
             {
-                gConfig.flag |=  gArrayTagId[bitTag].id;
-//                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
+                    //&& 	( buffTagValue != 0) )
+
+                gConfig.flag |=  gArrayTagIdTrace[bitTag].id;
+                //printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
             }
+            // ******************************************
+            //      DEBUG
+            // ******************************************
+           if( bitTag < 0 )
+           {
+               bitTag = apisyslog_findTagDebug(buffTag);
+
+               if(     ( bitTag >= 0 ) )
+                   //&&  ( buffTagValue != 0) )
+               {
+                   if( 0 == strcmp(buffTag,APISYSLOG_DEBUG_FIFO ) )
+                   {
+                       strcpy(gConfig.fifoname,bufft
+                   }
+
+                       gConfig.flag |=  gArrayTagIdDebug[bitTag].id;
+                   //                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
+               }
+
+           }
         }
     }
 
@@ -221,20 +254,20 @@ int apisyslog_readFile()
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_findTag(const char* a_Buffer)
+int apisyslog_findTagTrace(const char* a_Buffer)
 {
     int  result = -1;
     int  ii = 0;
 
     do
     {
-        if( gArrayTagId[ii].id == APISYSLOG_TRACE_END)
+        if( gArrayTagIdTrace[ii].id == APISYSLOG_TRACE_END)
         {
             break;
         }
         else
         {
-            if( strcmp(gArrayTagId[ii].tag,a_Buffer) == 0 )
+            if( strcmp(gArrayTagIdTrace[ii].tag,a_Buffer) == 0 )
             {
                 result = ii;
                 break;
@@ -247,6 +280,36 @@ int apisyslog_findTag(const char* a_Buffer)
 
     return result;
 }
+//*********************************************************
+//*
+//*********************************************************
+int apisyslog_findTagDebug(const char* a_Buffer)
+{
+    int  result = -1;
+    int  ii = 0;
+
+    do
+    {
+        if( gArrayTagIdDebug[ii].id == APISYSLOG_TRACE_END)
+        {
+            break;
+        }
+        else
+        {
+            if( strcmp(gArrayTagIdDebug[ii].tag,a_Buffer) == 0 )
+            {
+                result = ii;
+                break;
+            }
+        }
+
+        ii++;
+
+    }while(1);
+
+    return result;
+}
+
 //*********************************************************
 //*
 //*********************************************************
@@ -285,7 +348,7 @@ uint64_t apisyslog_getflag(uint64_t a_flag)
     uint64_t result = 0;
     result = gConfig.flag & a_flag;
 
-//    printf("apisyslog_getflag %lX result=%lX\n",gConfig.flag,result);
+    //    printf("apisyslog_getflag %lX result=%lX\n",gConfig.flag,result);
 
     return result;
 }
@@ -369,3 +432,15 @@ int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
     return vRetcode;
 }
 
+int apisyslog_Wait(uint64_t a_flag)
+{
+    uint64_t result = 0;
+    result = gConfig.flag & a_flag;
+
+    if ( result )
+    {
+
+    }
+
+    return result;
+}
