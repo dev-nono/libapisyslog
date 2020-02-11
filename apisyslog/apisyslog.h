@@ -15,7 +15,9 @@
 #define APISYSLOG_TRACE_INOUT 	(1 << 0 )
 #define APISYSLOG_TRACE_1 		(1 << 1 )
 #define APISYSLOG_TRACE_2 		(1 << 2 )
-#define APISYSLOG_TRACE_NANO	(1 << 64 )
+#define APISYSLOG_TRACE_STDERR	(1 << 61 )
+#define APISYSLOG_TRACE_STDOUT	(1 << 62 )
+#define APISYSLOG_TRACE_NANO	(1 << 63 )
 #define APISYSLOG_TRACE_END		0
 
 #define TRACE_IN(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_INOUT) )\
