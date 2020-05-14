@@ -182,6 +182,7 @@ int apisyslog_readFile()
     int		bitTag = 0;
     gConfig.flag = 0;
 
+    (void) vTagValue;
     //	printf("apisyslog_readFile \n");
 
     fd = fopen(gConfig.filename,"rt");
@@ -207,7 +208,7 @@ int apisyslog_readFile()
                 buffer[lenBuff-1] = 0;
 
             //sscanf(buffer,"%[^=]=%d",buffTag,&buffTagValue);
-            sscanf(buffer,"%[^=]=%s",buffTag,&buffTagValue);
+            sscanf(buffer,"%[^=]=%s",buffTag,buffTagValue);
 
             // ******************************************
             //      TRACE
@@ -233,7 +234,7 @@ int apisyslog_readFile()
                {
                    if( 0 == strcmp(buffTag,APISYSLOG_DEBUG_FIFO ) )
                    {
-                       strcpy(gConfig.fifoname,bufft
+                       strncpy(gConfig.fifoname,buffTag,PATH_MAX-1);
                    }
 
                        gConfig.flag |=  gArrayTagIdDebug[bitTag].id;
