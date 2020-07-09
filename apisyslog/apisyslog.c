@@ -18,6 +18,9 @@
 #include <pthread.h>
 #include <libgen.h>
 #include <time.h>
+#include <syslog.h>
+#include <stdio.h>
+
 
 #include <string.h>
 
@@ -33,6 +36,17 @@ struct sTagId gArrayTagIdTrace[] =
         {"trace.inout",     APISYSLOG_TRACE_INOUT},
         {"trace.dbg1",      APISYSLOG_TRACE_1},
         {"trace.dbg2",      APISYSLOG_TRACE_2},
+        {"trace.dbg3",      APISYSLOG_TRACE_3},
+        {"trace.dbg4",      APISYSLOG_TRACE_4},
+        {"trace.dbg5",      APISYSLOG_TRACE_5},
+        {"trace.dbg6",      APISYSLOG_TRACE_6},
+        {"trace.dbg7",      APISYSLOG_TRACE_7},
+        {"trace.dbg8",      APISYSLOG_TRACE_8},
+        {"trace.dbg9",      APISYSLOG_TRACE_9},
+        {"trace.dbg10",      APISYSLOG_TRACE_10},
+        {"trace.dbg11",      APISYSLOG_TRACE_11},
+        {"trace.dbg12",      APISYSLOG_TRACE_12},
+        {"trace.dbg13",      APISYSLOG_TRACE_13},
 
         {"trace.nano",      APISYSLOG_TRACE_NANO},
         {"trace.stdout",    APISYSLOG_TRACE_STDOUT},
@@ -108,6 +122,7 @@ static void * apisyslog_thread_body(void *arg)
     fd_set 	rfds;
 
     (void)result;
+    (void)arg;
 
     result = apisyslog_readFile();
 
@@ -149,7 +164,7 @@ static void * apisyslog_thread_body(void *arg)
 int apisyslog_CheckModify(const char* a_Buffer)
 {
     int result 	= 0;
-    int ii 		= 0;
+    unsigned int ii 		= 0;
 
     while ( ii < EVENT_BUF_LEN )
     {
@@ -210,42 +225,48 @@ int apisyslog_readFile()
             //sscanf(buffer,"%[^=]=%d",buffTag,&buffTagValue);
             sscanf(buffer,"%[^=]=%s",buffTag,buffTagValue);
 
-            // ******************************************
-            //      TRACE
-            // ******************************************
-            bitTag = apisyslog_findTagTrace(buffTag);
-
-            if( bitTag >= 0 )
+            if( buffTagValue[0] == '0' )
             {
-                    //&& 	( buffTagValue != 0) )
-
-                gConfig.flag |=  gArrayTagIdTrace[bitTag].id;
-                //printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
             }
-            // ******************************************
-            //      DEBUG
-            // ******************************************
-           if( bitTag < 0 )
-           {
-               bitTag = apisyslog_findTagDebug(buffTag);
+            else
+            {
+                // ******************************************
+                //      TRACE
+                // ******************************************
+                bitTag = apisyslog_findTagTrace(buffTag);
 
-               if(     ( bitTag >= 0 ) )
-                   //&&  ( buffTagValue != 0) )
+                if( bitTag >= 0 )
+                {
+                        //&& 	( buffTagValue != 0) )
+
+                    gConfig.flag |=  gArrayTagIdTrace[bitTag].id;
+                    //printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
+                }
+
+                // ******************************************
+                //      DEBUG
+                // ******************************************
+               if( bitTag < 0 )
                {
-                   if( 0 == strcmp(buffTag,APISYSLOG_DEBUG_FIFO ) )
+                   bitTag = apisyslog_findTagDebug(buffTag);
+
+                   if(     ( bitTag >= 0 ) )
+                       //&&  ( buffTagValue != 0) )
                    {
-                       strncpy(gConfig.fifoname,buffTag,PATH_MAX-1);
+                       if( 0 == strcmp(buffTag,APISYSLOG_DEBUG_FIFO ) )
+                       {
+                           strncpy(gConfig.fifoname,buffTag,PATH_MAX-1);
+                       }
+
+                           gConfig.flag |=  gArrayTagIdDebug[bitTag].id;
+                       //                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
                    }
+               }// if( bitTag < 0 )
+            }// if( buffTagValue[0] == '0' )
+        }//while ( ! feof( fd ) )
+    }// if( fd == 0 ) else
 
-                       gConfig.flag |=  gArrayTagIdDebug[bitTag].id;
-                   //                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
-               }
-
-           }
-        }
-    }
-
-    if( fd > 0 )
+    if( NULL != fd  )
     {
         fclose(fd);
     }

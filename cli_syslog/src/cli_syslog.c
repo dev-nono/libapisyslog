@@ -14,7 +14,7 @@
 
 
 #include "apisyslog.h"
-#include "apisyslog_int.h"
+//#include "apisyslog_int.h"
 //extern sConfigSyslog_t gConfig;
 
 
@@ -44,7 +44,17 @@ int main( int argc, char* argv[] )
 
 		TRACE_DBG1("DBG1 %s", buffer);
 		TRACE_DBG2("DBG2 %s", buffer);
-        TRACE_DBG2("DBG22 %s", buffer);
+        TRACE_DBG3("DBG3 %s", buffer);
+        TRACE_DBG4("DBG4 %s", buffer);
+        TRACE_DBG5("DBG5 %s", buffer);
+        TRACE_DBG6("DBG6 %s", buffer);
+        TRACE_DBG7("DBG7 %s", buffer);
+        TRACE_DBG8("DBG8 %s", buffer);
+        TRACE_DBG9("DBG9 %s", buffer);
+        TRACE_DBG10("DB10 %s", buffer);
+        TRACE_DBG11("DBG11 %s", buffer);
+        TRACE_DBG12("DBG12 %s", buffer);
+        TRACE_DBG13("DBG13 %s", buffer);
 
 	}while(1);
 
