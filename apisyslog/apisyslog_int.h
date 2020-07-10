@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <semaphore.h>
 
 #define APISYSLOG_TAG_SIZE 255
 struct sConfigSyslog
@@ -21,6 +22,7 @@ struct sConfigSyslog
 	uint64_t	flag;
 	char		prefix[100];
 	pthread_t	thread_id;
+	sem_t       semaphore;
 	int			fdInit;
 	int			fdWatch;
 };

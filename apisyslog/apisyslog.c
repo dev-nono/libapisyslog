@@ -20,11 +20,12 @@
 #include <time.h>
 #include <syslog.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 
 #include <string.h>
 
-
+#include "utils.h"
 #include "apisyslog_int.h"
 #include "apisyslog.h"
 
@@ -33,24 +34,66 @@
 
 struct sTagId gArrayTagIdTrace[] =
 {
-        {"trace.inout",     APISYSLOG_TRACE_INOUT},
-        {"trace.dbg1",      APISYSLOG_TRACE_1},
-        {"trace.dbg2",      APISYSLOG_TRACE_2},
-        {"trace.dbg3",      APISYSLOG_TRACE_3},
-        {"trace.dbg4",      APISYSLOG_TRACE_4},
-        {"trace.dbg5",      APISYSLOG_TRACE_5},
-        {"trace.dbg6",      APISYSLOG_TRACE_6},
-        {"trace.dbg7",      APISYSLOG_TRACE_7},
-        {"trace.dbg8",      APISYSLOG_TRACE_8},
-        {"trace.dbg9",      APISYSLOG_TRACE_9},
+        {"trace.dbg1",       APISYSLOG_TRACE_1},
+        {"trace.dbg2",       APISYSLOG_TRACE_2},
+        {"trace.dbg3",       APISYSLOG_TRACE_3},
+        {"trace.dbg4",       APISYSLOG_TRACE_4},
+        {"trace.dbg5",       APISYSLOG_TRACE_5},
+        {"trace.dbg6",       APISYSLOG_TRACE_6},
+        {"trace.dbg7",       APISYSLOG_TRACE_7},
+        {"trace.dbg8",       APISYSLOG_TRACE_8},
+        {"trace.dbg9",       APISYSLOG_TRACE_9},
         {"trace.dbg10",      APISYSLOG_TRACE_10},
         {"trace.dbg11",      APISYSLOG_TRACE_11},
         {"trace.dbg12",      APISYSLOG_TRACE_12},
         {"trace.dbg13",      APISYSLOG_TRACE_13},
+        {"trace.dbg14",      APISYSLOG_TRACE_14},
+        {"trace.dbg15",      APISYSLOG_TRACE_15},
+        {"trace.dbg16",      APISYSLOG_TRACE_16},
+        {"trace.dbg17",      APISYSLOG_TRACE_17},
+        {"trace.dbg18",      APISYSLOG_TRACE_18},
+        {"trace.dbg19",      APISYSLOG_TRACE_19},
+        {"trace.dbg20",      APISYSLOG_TRACE_20},
+        {"trace.dbg21",      APISYSLOG_TRACE_21},
+        {"trace.dbg22",      APISYSLOG_TRACE_22},
+        {"trace.dbg23",      APISYSLOG_TRACE_23},
+        {"trace.dbg24",      APISYSLOG_TRACE_24},
+        {"trace.dbg25",      APISYSLOG_TRACE_25},
+        {"trace.dbg26",      APISYSLOG_TRACE_26},
+        {"trace.dbg27",      APISYSLOG_TRACE_27},
+        {"trace.dbg28",      APISYSLOG_TRACE_28},
+        {"trace.dbg29",      APISYSLOG_TRACE_29},
+        {"trace.dbg30",      APISYSLOG_TRACE_30},
+        {"trace.dbg31",      APISYSLOG_TRACE_31},
+        {"trace.dbg32",      APISYSLOG_TRACE_32},
+        {"trace.dbg33",      APISYSLOG_TRACE_33},
+        {"trace.dbg34",      APISYSLOG_TRACE_34},
+        {"trace.dbg35",      APISYSLOG_TRACE_35},
+        {"trace.dbg36",      APISYSLOG_TRACE_36},
+        {"trace.dbg37",      APISYSLOG_TRACE_37},
+        {"trace.dbg38",      APISYSLOG_TRACE_38},
+        {"trace.dbg39",      APISYSLOG_TRACE_39},
+        {"trace.dbg40",      APISYSLOG_TRACE_40},
+        {"trace.dbg41",      APISYSLOG_TRACE_41},
+        {"trace.dbg42",      APISYSLOG_TRACE_42},
+        {"trace.dbg43",      APISYSLOG_TRACE_43},
+        {"trace.dbg44",      APISYSLOG_TRACE_44},
+        {"trace.dbg45",      APISYSLOG_TRACE_45},
+        {"trace.dbg46",      APISYSLOG_TRACE_46},
+        {"trace.dbg47",      APISYSLOG_TRACE_47},
+        {"trace.dbg48",      APISYSLOG_TRACE_48},
+        {"trace.dbg49",      APISYSLOG_TRACE_49},
+        {"trace.dbg50",      APISYSLOG_TRACE_50},
+
+        {"trace.in",        APISYSLOG_TRACE_IN},
+        {"trace.out",       APISYSLOG_TRACE_OUT},
+        {"trace.inout",     APISYSLOG_TRACE_INOUT},
 
         {"trace.nano",      APISYSLOG_TRACE_NANO},
         {"trace.stdout",    APISYSLOG_TRACE_STDOUT},
         {"trace.stderr",    APISYSLOG_TRACE_STDERR},
+
+
         {"",                APISYSLOG_TRACE_END}
 };
 struct sTagId gArrayTagIdDebug[] =
@@ -62,7 +105,7 @@ struct sTagId gArrayTagIdDebug[] =
         {"",                APISYSLOG_TRACE_END}
 };
 
-sConfigSyslog_t gConfig;
+sConfigSyslog_t g_Config = {0};
 
 //*********************************************************
 //*
@@ -74,7 +117,7 @@ int apisyslog_init(const char* a_ConfigFilemame)
     char 	linkbuf[PATH_MAX];
     char 	filename[PATH_MAX];
 
-    memset(&gConfig,0,sizeof(gConfig));
+    memset(&g_Config,0,sizeof(g_Config));
 
     if( *a_ConfigFilemame == 0 )
     {
@@ -82,20 +125,20 @@ int apisyslog_init(const char* a_ConfigFilemame)
         strncpy(filename,linkbuf,APISYSLOG_TAG_SIZE-1);
         pathname = dirname(linkbuf);
 
-        snprintf(gConfig.dirname,PATH_MAX-1,"%s",pathname);
-        snprintf(gConfig.basename,APISYSLOG_TAG_SIZE-1,"debugtrace.conf");
+        snprintf(g_Config.dirname,PATH_MAX-1,"%s",pathname);
+        snprintf(g_Config.basename,APISYSLOG_TAG_SIZE-1,"debugtrace.conf");
     }
     else
     {
         strncpy(filename,a_ConfigFilemame,PATH_MAX-1);
         pathname = basename(filename);
-        strncpy(gConfig.basename,filename,APISYSLOG_TAG_SIZE-1);
+        strncpy(g_Config.basename,filename,APISYSLOG_TAG_SIZE-1);
     }
-    snprintf(gConfig.filename,PATH_MAX,"%s/%s",gConfig.dirname,gConfig.basename);
+    snprintf(g_Config.filename,PATH_MAX,"%s/%s",g_Config.dirname,g_Config.basename);
 
-    strncpy(gConfig.prefix,"PREFIX",100-1);
+    strncpy(g_Config.prefix,"PREFIX",100-1);
 
-    openlog(gConfig.prefix, LOG_NDELAY | LOG_PID , LOG_LOCAL7);
+    openlog(g_Config.prefix, LOG_NDELAY | LOG_PID , LOG_LOCAL7);
 
     result = apisyslog_StartThread();
 
@@ -126,23 +169,32 @@ static void * apisyslog_thread_body(void *arg)
 
     result = apisyslog_readFile();
 
-    gConfig.fdInit = inotify_init1(IN_CLOEXEC);
+    errno = 0;
+    result = sem_post(&g_Config.semaphore);
+    if (0 != result )
+    {
+        fprintf(stderr,"%s Error sem_post()  err=%d %s \n",
+                __FUNCTION__,errno, strerror(errno) );
+        result = errno;
+    }
+
+    g_Config.fdInit = inotify_init1(IN_CLOEXEC);
 
     do
     {
-        gConfig.fdWatch = inotify_add_watch( 	gConfig.fdInit,
-                gConfig.dirname,
+        g_Config.fdWatch = inotify_add_watch( 	g_Config.fdInit,
+                g_Config.dirname,
                 IN_MODIFY //| IN_CLOSE_WRITE
         );
 
         FD_ZERO(&rfds);
-        FD_SET(gConfig.fdInit , &rfds);
+        FD_SET(g_Config.fdInit , &rfds);
 
-        result = select(gConfig.fdInit+1, &rfds, NULL, NULL, NULL);
+        result = select(g_Config.fdInit+1, &rfds, NULL, NULL, NULL);
 
-        inotify_rm_watch( gConfig.fdInit, gConfig.fdWatch);
+        inotify_rm_watch( g_Config.fdInit, g_Config.fdWatch);
 
-        result = read(gConfig.fdInit ,buffer,EVENT_BUF_LEN);
+        result = read(g_Config.fdInit ,buffer,EVENT_BUF_LEN);
 
         result = apisyslog_CheckModify(buffer);
         if( result > 0 )
@@ -151,10 +203,10 @@ static void * apisyslog_thread_body(void *arg)
         }
     }while(1);
 
-    inotify_rm_watch( gConfig.fdInit, gConfig.fdWatch);
+    inotify_rm_watch( g_Config.fdInit, g_Config.fdWatch);
 
-    close(gConfig.fdWatch);
-    close(gConfig.fdInit);
+    close(g_Config.fdWatch);
+    close(g_Config.fdInit);
 
     return (void*) 0;
 }
@@ -170,7 +222,7 @@ int apisyslog_CheckModify(const char* a_Buffer)
     {
         struct inotify_event *event = ( struct inotify_event * ) &a_Buffer[ ii ];
         if ( ( event->mask != 0 )
-                && ( 0 == strcmp( event->name,gConfig.basename)))
+                && ( 0 == strcmp( event->name,g_Config.basename)))
         {
             //            printf("mask=%X name=%s \n",event->mask,event->name);
             result = 1;
@@ -195,12 +247,12 @@ int apisyslog_readFile()
     int		lenBuff = 0;
 
     int		bitTag = 0;
-    gConfig.flag = 0;
+    g_Config.flag = 0;
 
     (void) vTagValue;
     //	printf("apisyslog_readFile \n");
 
-    fd = fopen(gConfig.filename,"rt");
+    fd = fopen(g_Config.filename,"rt");
 
     if( fd == 0 )
     {
@@ -239,7 +291,7 @@ int apisyslog_readFile()
                 {
                         //&& 	( buffTagValue != 0) )
 
-                    gConfig.flag |=  gArrayTagIdTrace[bitTag].id;
+                    g_Config.flag |=  gArrayTagIdTrace[bitTag].id;
                     //printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
                 }
 
@@ -255,10 +307,10 @@ int apisyslog_readFile()
                    {
                        if( 0 == strcmp(buffTag,APISYSLOG_DEBUG_FIFO ) )
                        {
-                           strncpy(gConfig.fifoname,buffTag,PATH_MAX-1);
+                           strncpy(g_Config.fifoname,buffTag,PATH_MAX-1);
                        }
 
-                           gConfig.flag |=  gArrayTagIdDebug[bitTag].id;
+                           g_Config.flag |=  gArrayTagIdDebug[bitTag].id;
                        //                printf("buffTag=%s buffTagValue=%d bitTag=%d\n",buffTag,buffTagValue,bitTag);
                    }
                }// if( bitTag < 0 )
@@ -340,25 +392,60 @@ int apisyslog_StartThread()
     int result 	= 0;
     pthread_attr_t attr;
 
-    result = pthread_attr_init(&attr);
-    if (result  != 0)
+
+    errno = 0;
+    result = sem_init(&g_Config.semaphore,1,0);
+    if (0 != result  )
     {
-        fprintf(stderr,"Error pthread_attr_init()  err<=%d %s",errno, strerror(errno) );
+        result = errno;
+        fprintf(stderr,"%s Error sem_init(1,0)  err=%d %s \n",
+                __FUNCTION__,errno, strerror(errno) );
     }
 
-    if( result == 0)
+    if( 0 == result  )
+    {
+        errno = 0;
+        result = pthread_attr_init(&attr);
+        if (0 != result )
+        {
+            fprintf(stderr,"%s Error pthread_attr_init()  err<=%d %s \n",
+                    __FUNCTION__,errno, strerror(errno) );
+            result = errno;
+        }
+    }
+    if( 0 == result  )
     {
         //The pthread_create() call stores the thread ID
 
-        result = pthread_create(&gConfig.thread_id, &attr,
+        errno = 0;
+        result = pthread_create(&g_Config.thread_id, &attr,
                 &apisyslog_thread_body, (void*)NULL);
 
         if (result  != 0)
-            fprintf(stderr,"Error pthread_create()  err<=%d %s",
-                    errno, strerror(errno) );
+            fprintf(stderr,"%s Error pthread_create()  err<=%d %s \n",
+                    __FUNCTION__,errno, strerror(errno) );
+        result = errno;
     }
     //Destroy the thread attributes object, since it is no longer needed
     pthread_attr_destroy(&attr);
+
+
+    if( 0 == result  )
+    {
+        struct timespec vDate = {0,0};
+        struct timespec vTimeout = {0,1e9/100}; // 10ms
+
+        ADD_TIMESPEC_REAL(vTimeout,vDate)
+
+        errno = 0;
+        result = sem_timedwait(&g_Config.semaphore,&vDate);
+        if (result  != 0)
+            fprintf(stderr,"%s Error sem_timedwait()  err<=%d %s \n",
+                    __FUNCTION__,errno, strerror(errno) );
+        result = errno;
+
+        sem_destroy(&g_Config.semaphore);
+    }
 
     return result;
 }
@@ -368,9 +455,9 @@ int apisyslog_StartThread()
 uint64_t apisyslog_getflag(uint64_t a_flag)
 {
     uint64_t result = 0;
-    result = gConfig.flag & a_flag;
+    result = g_Config.flag & a_flag;
 
-    //    printf("apisyslog_getflag %lX result=%lX\n",gConfig.flag,result);
+    //    printf("apisyslog_getflag %lX result=%lX\n",g_Config.flag,result);
 
     return result;
 }
@@ -457,7 +544,7 @@ int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
 int apisyslog_Wait(uint64_t a_flag)
 {
     uint64_t result = 0;
-    result = gConfig.flag & a_flag;
+    result = g_Config.flag & a_flag;
 
     if ( result )
     {
