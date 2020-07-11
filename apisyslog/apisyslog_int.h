@@ -12,12 +12,14 @@
 #include <limits.h>
 #include <semaphore.h>
 
+#define APISYSLOG_CONFIG_FILENAME "debugtrace.conf"
 #define APISYSLOG_TAG_SIZE 255
+
 struct sConfigSyslog
 {
-	char 		basename[APISYSLOG_TAG_SIZE];
-	char 		dirname[PATH_MAX-APISYSLOG_TAG_SIZE];
-	char 		filename[PATH_MAX];
+	char 		process_basename[APISYSLOG_TAG_SIZE];
+	char 		process_dirname[PATH_MAX-APISYSLOG_TAG_SIZE];
+	char 		config_filename[PATH_MAX];
     char        fifoname[PATH_MAX];
 	uint64_t	flag;
 	char		prefix[100];

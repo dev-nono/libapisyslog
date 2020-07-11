@@ -34,6 +34,16 @@
 
 struct sTagId gArrayTagIdTrace[] =
 {
+        {"trace.in",        APISYSLOG_TRACE_IN},
+        {"trace.out",       APISYSLOG_TRACE_OUT},
+        {"trace.inout",     APISYSLOG_TRACE_INOUT},
+
+        {"trace.nano",      APISYSLOG_TRACE_NANO},
+        {"trace.stdout",    APISYSLOG_TRACE_STDOUT},
+        {"trace.stderr",    APISYSLOG_TRACE_STDERR},
+        {"trace.log",       APISYSLOG_TRACE_LOG},
+        {"trace.err",       APISYSLOG_TRACE_ERR},
+
         {"trace.dbg1",       APISYSLOG_TRACE_1},
         {"trace.dbg2",       APISYSLOG_TRACE_2},
         {"trace.dbg3",       APISYSLOG_TRACE_3},
@@ -85,13 +95,6 @@ struct sTagId gArrayTagIdTrace[] =
         {"trace.dbg49",      APISYSLOG_TRACE_49},
         {"trace.dbg50",      APISYSLOG_TRACE_50},
 
-        {"trace.in",        APISYSLOG_TRACE_IN},
-        {"trace.out",       APISYSLOG_TRACE_OUT},
-        {"trace.inout",     APISYSLOG_TRACE_INOUT},
-
-        {"trace.nano",      APISYSLOG_TRACE_NANO},
-        {"trace.stdout",    APISYSLOG_TRACE_STDOUT},
-        {"trace.stderr",    APISYSLOG_TRACE_STDERR},
 
 
         {"",                APISYSLOG_TRACE_END}
@@ -113,28 +116,43 @@ sConfigSyslog_t g_Config = {0};
 int apisyslog_init(const char* a_ConfigFilemame)
 {
     int result = 0;
-    char 	*pathname = 0;
+    char 	*pPathname = 0;
+    char    *pBasename  = 0;
     char 	linkbuf[PATH_MAX];
     char 	filename[PATH_MAX];
 
     memset(&g_Config,0,sizeof(g_Config));
 
+    readlink("/proc/self/exe", linkbuf, PATH_MAX-1);
+
+
     if( *a_ConfigFilemame == 0 )
     {
-        readlink("/proc/self/exe", linkbuf, PATH_MAX-1);
         strncpy(filename,linkbuf,APISYSLOG_TAG_SIZE-1);
-        pathname = dirname(linkbuf);
 
-        snprintf(g_Config.dirname,PATH_MAX-1,"%s",pathname);
-        snprintf(g_Config.basename,APISYSLOG_TAG_SIZE-1,"debugtrace.conf");
+        pPathname = dirname(filename);
+        snprintf(g_Config.process_dirname,PATH_MAX-1,"%s",pPathname);
+
+        strncpy(filename,linkbuf,APISYSLOG_TAG_SIZE-1);
+
+        pBasename = basename(filename);
+        snprintf(g_Config.process_basename,APISYSLOG_TAG_SIZE-1,pBasename);
     }
     else
     {
-        strncpy(filename,a_ConfigFilemame,PATH_MAX-1);
-        pathname = basename(filename);
-        strncpy(g_Config.basename,filename,APISYSLOG_TAG_SIZE-1);
+        strncpy(filename,a_ConfigFilemame,APISYSLOG_TAG_SIZE-1);
+
+        pPathname = dirname(filename);
+        snprintf(g_Config.process_dirname,PATH_MAX-1,"%s",pPathname);
+
+        strncpy(filename,a_ConfigFilemame,APISYSLOG_TAG_SIZE-1);
+
+        pBasename = basename(filename);
+        snprintf(g_Config.process_basename,APISYSLOG_TAG_SIZE-1,pBasename);
     }
-    snprintf(g_Config.filename,PATH_MAX,"%s/%s",g_Config.dirname,g_Config.basename);
+    snprintf(g_Config.config_filename,PATH_MAX,"%s/%s",
+            g_Config.process_dirname,
+            APISYSLOG_CONFIG_FILENAME);
 
     strncpy(g_Config.prefix,"PREFIX",100-1);
 
@@ -183,7 +201,7 @@ static void * apisyslog_thread_body(void *arg)
     do
     {
         g_Config.fdWatch = inotify_add_watch( 	g_Config.fdInit,
-                g_Config.dirname,
+                g_Config.process_dirname,
                 IN_MODIFY //| IN_CLOSE_WRITE
         );
 
@@ -222,7 +240,7 @@ int apisyslog_CheckModify(const char* a_Buffer)
     {
         struct inotify_event *event = ( struct inotify_event * ) &a_Buffer[ ii ];
         if ( ( event->mask != 0 )
-                && ( 0 == strcmp( event->name,g_Config.basename)))
+                && ( 0 == strcmp( event->name,g_Config.process_basename)))
         {
             //            printf("mask=%X name=%s \n",event->mask,event->name);
             result = 1;
@@ -252,11 +270,15 @@ int apisyslog_readFile()
     (void) vTagValue;
     //	printf("apisyslog_readFile \n");
 
-    fd = fopen(g_Config.filename,"rt");
+    fd = fopen(g_Config.config_filename,"rt");
 
     if( fd == 0 )
     {
         result = errno;
+
+        g_Config.flag =     APISYSLOG_TRACE_NANO
+                        |   APISYSLOG_TRACE_STDERR
+                        |   APISYSLOG_TRACE_LOG;
     }
     else
     {
@@ -506,16 +528,17 @@ int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
     {
         struct timespec vRes = {0,0};
         vRetcode = clock_gettime(CLOCK_MONOTONIC_RAW,&vRes);
-        snprintf(vNano,25, "%4ld.%09ld",vRes.tv_sec,vRes.tv_nsec);
+        snprintf(vNano,25, "%4ld,%09ld",vRes.tv_sec,vRes.tv_nsec);
     }
 
     //*********************************************************
     //              PRINT SYSLOG
     //*********************************************************
 
-    snprintf( vMessageToPrint, 512-1 , "%s %5d %s %s",
+    snprintf( vMessageToPrint, 512-1 , "%s %5d %-15s %s %s",
             vNano,
             vTid,
+            g_Config.process_basename,
             pszFuncName,
             vMessage);
 

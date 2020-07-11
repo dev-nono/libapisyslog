@@ -10,6 +10,19 @@
 
 #include <stdint.h>
 
+/********************************
+     char msgbuffer[APISYSLOG_MSG_SIZE] = {0};
+
+    snprintf(msgbuffer,APISYSLOG_MSG_SIZE-50,
+
+    fprintf(stderr,"%s : %s",__FUNCTION__, msgbuffer);
+    TRACE_ERR(msgbuffer);
+
+*/
+
+#define APISYSLOG_MSG_SIZE 512
+
+
 #define APISYSLOG_TRACE_1 		         (1UL << 0 )
 #define APISYSLOG_TRACE_2 		         (1UL << 1 )
 #define APISYSLOG_TRACE_3                (1UL << 2 )
@@ -64,10 +77,11 @@
 #define APISYSLOG_TRACE_IN              (1UL << 50 )
 #define APISYSLOG_TRACE_OUT             (1UL << 51 )
 #define APISYSLOG_TRACE_INOUT           (APISYSLOG_TRACE_IN | APISYSLOG_TRACE_OUT )
+#define APISYSLOG_TRACE_LOG             (1UL << 52 )
+#define APISYSLOG_TRACE_ERR             (1UL << 53 )
 
-
-#define APISYSLOG_DBG_WAIT1	            (1UL << 52 )
-#define APISYSLOG_DBG_WAIT2             (1UL << 53 )
+#define APISYSLOG_DBG_WAIT1	            (1UL << 58 )
+#define APISYSLOG_DBG_WAIT2             (1UL << 59 )
 
 #define APISYSLOG_TRACE_STDERR          (1UL << 60 )
 #define APISYSLOG_TRACE_STDOUT	        (1UL << 62 )
@@ -90,6 +104,11 @@
 #define TRACE_OUT(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_OUT) )\
         { apisyslog_PrintLog(__FUNCTION__, arg_1);}
 
+#define TRACE_LOG(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_LOG) )\
+        { apisyslog_PrintLog(__FUNCTION__, arg_1);}
+
+#define TRACE_ERR(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_ERR) )\
+        { apisyslog_PrintLog(__FUNCTION__, arg_1);}
 
 #define TRACE_DBG1(arg_1...) if ( apisyslog_getflag(APISYSLOG_TRACE_1) )\
         { apisyslog_PrintLog(__FUNCTION__, arg_1);}
