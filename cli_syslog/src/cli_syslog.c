@@ -13,14 +13,14 @@
 #include <string.h>
 
 
+#include "utils.h"
 #include "apisyslog.h"
-//#include "apisyslog_int.h"
-//extern sConfigSyslog_t gConfig;
+
 
 
 int main( int argc, char* argv[] )
 {
-	int result = EXIT_SUCCESS;
+	int result = SUCCESS;
 
 	#define BUF_SIZE 255
 	char buffer[BUF_SIZE-1];
