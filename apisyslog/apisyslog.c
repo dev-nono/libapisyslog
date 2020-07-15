@@ -21,6 +21,7 @@
 #include <syslog.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <poll.h>
 
 
 #include <string.h>
@@ -28,6 +29,8 @@
 #include "utils.h"
 #include "apisyslog_int.h"
 #include "apisyslog.h"
+
+// #define PRINT_DBG 1
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
@@ -136,7 +139,7 @@ int apisyslog_init(const char* a_ConfigFilemame)
         strncpy(filename,linkbuf,APISYSLOG_TAG_SIZE-1);
 
         pBasename = basename(filename);
-        snprintf(g_Config.process_basename,APISYSLOG_TAG_SIZE-1,pBasename);
+        snprintf(g_Config.process_basename,APISYSLOG_TAG_SIZE-1,"%s",pBasename);
     }
     else
     {
@@ -148,12 +151,16 @@ int apisyslog_init(const char* a_ConfigFilemame)
         strncpy(filename,a_ConfigFilemame,APISYSLOG_TAG_SIZE-1);
 
         pBasename = basename(filename);
-        snprintf(g_Config.process_basename,APISYSLOG_TAG_SIZE-1,pBasename);
+        snprintf(g_Config.process_basename,APISYSLOG_TAG_SIZE-1,"%s",pBasename);
     }
     snprintf(g_Config.config_filename,PATH_MAX,"%s/%s",
             g_Config.process_dirname,
             APISYSLOG_CONFIG_FILENAME);
 
+#ifdef  PRINT_DBG
+    printf("%s : g_Config.config_filename=%s \n",
+            __FUNCTION__, g_Config.config_filename);
+#endif
     strncpy(g_Config.prefix,"PREFIX",100-1);
 
     openlog(g_Config.prefix, LOG_NDELAY | LOG_PID , LOG_LOCAL7);
@@ -180,7 +187,10 @@ static void * apisyslog_thread_body(void *arg)
 {
     int		result	= 0;
     char 	buffer[EVENT_BUF_LEN];
-    fd_set 	rfds;
+    struct pollfd   vPollfd = {0};
+    nfds_t          vNfds    = 1;
+    int             vTimeout = -1;
+
 
     (void)result;
     (void)arg;
@@ -205,19 +215,41 @@ static void * apisyslog_thread_body(void *arg)
                 IN_MODIFY //| IN_CLOSE_WRITE
         );
 
-        FD_ZERO(&rfds);
-        FD_SET(g_Config.fdInit , &rfds);
+        vPollfd.fd =  g_Config.fdInit;
+        vPollfd.events = POLLIN | POLLPRI ;
+        vPollfd.revents = 0;
+        errno = 0;
 
-        result = select(g_Config.fdInit+1, &rfds, NULL, NULL, NULL);
+        result  = poll(&vPollfd, vNfds, vTimeout);
+
+#ifdef  PRINT_DBG
+        printf("%s : _4_ poll  result=%d: revents=%d 0x%X \n",
+                __FUNCTION__,result,
+                (int)vPollfd.revents,(int)vPollfd.revents);
+#endif
 
         inotify_rm_watch( g_Config.fdInit, g_Config.fdWatch);
 
         result = read(g_Config.fdInit ,buffer,EVENT_BUF_LEN);
 
-        result = apisyslog_CheckModify(buffer);
+#ifdef  PRINT_DBG
+        printf("%s: %d = read(fd=%d size=%ld) \n",
+                __FUNCTION__,result, g_Config.fdInit, EVENT_BUF_LEN);
+#endif
+
+        result = apisyslog_CheckModify(buffer,result);
+
+#ifdef  PRINT_DBG
+        printf("%s: %d = apisyslog_CheckModify() \n",
+                __FUNCTION__,result);
+#endif
+
         if( result > 0 )
         {
             apisyslog_readFile();
+#ifdef  PRINT_DBG
+        printf("%s: apisyslog_readFile() \n",__FUNCTION__);
+#endif
         }
     }while(1);
 
@@ -231,23 +263,31 @@ static void * apisyslog_thread_body(void *arg)
 //*********************************************************
 //*
 //*********************************************************
-int apisyslog_CheckModify(const char* a_Buffer)
+int apisyslog_CheckModify(const char* a_Buffer,int a_Size)
 {
     int result 	= 0;
-    unsigned int ii 		= 0;
+    char*                   pBuffer     = (char*)a_Buffer;
+    struct inotify_event    *pEvent     = 0;
 
-    while ( ii < EVENT_BUF_LEN )
+
+    for (pBuffer = (char*)a_Buffer; pBuffer < a_Buffer + a_Size ; )
     {
-        struct inotify_event *event = ( struct inotify_event * ) &a_Buffer[ ii ];
-        if ( ( event->mask != 0 )
-                && ( 0 == strcmp( event->name,g_Config.process_basename)))
+        pEvent = (struct inotify_event *) pBuffer;
+
+#ifdef PRINT_DBG
+      printf("%s: mask=%X name=%s \n",__FUNCTION__,pEvent->mask,pEvent->name);
+#endif
+        if ( ( pEvent->mask != 0 )
+                && ( 0 == strcmp( pEvent->name,APISYSLOG_CONFIG_FILENAME)))
         {
-            //            printf("mask=%X name=%s \n",event->mask,event->name);
             result = 1;
             break; // one event need
         }
-        ii += EVENT_SIZE + event->len;
+
+        pBuffer += sizeof(struct inotify_event) + pEvent->len;
     }
+
+
     return result;
 }
 //*********************************************************
@@ -258,7 +298,6 @@ int apisyslog_readFile()
     int 	result  = 0;
     FILE* 	fd		= 0;
     char 	buffer[APISYSLOG_TAG_SIZE];
-    //	char*	pBuffer = 0;
     char 	buffTag[APISYSLOG_TAG_SIZE];
     char 	buffTagValue[APISYSLOG_TAG_SIZE];
     int 	vTagValue = 0;
@@ -479,8 +518,9 @@ uint64_t apisyslog_getflag(uint64_t a_flag)
     uint64_t result = 0;
     result = g_Config.flag & a_flag;
 
-    //    printf("apisyslog_getflag %lX result=%lX\n",g_Config.flag,result);
-
+#ifdef  PRINT_DBG
+        printf("apisyslog_getflag flag=%#lX result=%#lX\n",g_Config.flag,result);
+#endif
     return result;
 }
 //*********************************************************
@@ -488,11 +528,16 @@ uint64_t apisyslog_getflag(uint64_t a_flag)
 //*********************************************************
 int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
 {
-    char 				vMessage[255];
-    char                vNano[25];
-    char 				vMessageToPrint[512];
+#define LEN_MESSAGETOPRINT (512)
+#define LEN_MESSAGE (255)
+#define LEN_NANO   (25)
+
+    char 				vMessage[LEN_MESSAGE];
+    char                vNano[LEN_NANO];
+    char 				vMessageToPrint[LEN_MESSAGETOPRINT];
+    char                vFormat[LEN_MESSAGE];
     int 				vTid = (int)syscall(SYS_gettid);
-    int vNBuf = 0;
+    int                 vNBuf = 0;
     int					vRetcode			= 0;
     va_list 			pVa_list;
     //struct timeval		vTimeval;
@@ -501,7 +546,7 @@ int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
     va_start(pVa_list, a_pszFmt);
 
     // Format user arguments
-    vNBuf = vsnprintf(vMessage , 255, a_pszFmt, pVa_list);
+    vNBuf = vsnprintf(vMessage , LEN_MESSAGE, a_pszFmt, pVa_list);
 
     //	gettimeofday(&vTimeval,0);
     //		fprintf(getFdLog(),
@@ -535,7 +580,8 @@ int apisyslog_PrintLog(const char *pszFuncName, const char *a_pszFmt, ...)
     //              PRINT SYSLOG
     //*********************************************************
 
-    snprintf( vMessageToPrint, 512-1 , "%s %5d %-15s %s %s",
+    strncpy(vFormat,"%s %5d %-15s %s %s",LEN_MESSAGE);
+    snprintf( vMessageToPrint, LEN_MESSAGETOPRINT - strlen(vFormat) , vFormat,
             vNano,
             vTid,
             g_Config.process_basename,

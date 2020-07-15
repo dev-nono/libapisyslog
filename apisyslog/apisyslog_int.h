@@ -12,7 +12,7 @@
 #include <limits.h>
 #include <semaphore.h>
 
-#define APISYSLOG_CONFIG_FILENAME "debugtrace.conf"
+#define APISYSLOG_CONFIG_FILENAME "syslog.conf"
 #define APISYSLOG_TAG_SIZE 255
 
 struct sConfigSyslog
@@ -38,7 +38,7 @@ struct sTagId
 
 int apisyslog_StartThread();
 int apisyslog_readFile();
-int apisyslog_CheckModify(const char* a_Buffer);
+int apisyslog_CheckModify(const char* a_Buffer,int a_Size);
 int apisyslog_findTagTrace(const char* a_Buffer);
 int apisyslog_findTagDebug(const char* a_Buffer);
 
