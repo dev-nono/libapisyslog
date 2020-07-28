@@ -1,0 +1,6 @@
+
+
+. ./setlibpath
+ cli_syslog/Debug/cli_syslog
+
+
