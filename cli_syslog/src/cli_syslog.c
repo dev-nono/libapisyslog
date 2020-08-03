@@ -12,9 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <syslog.h>
 
 #include "utils.h"
 #include "apisyslog.h"
+
 
 
 

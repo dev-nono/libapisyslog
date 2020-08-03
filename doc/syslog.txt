@@ -1,4 +1,8 @@
 
+
+sudo systemctl restart rsyslog; sudo systemctl rsyslog status
+
+
 LD_LIBRARY_PATH
 
 

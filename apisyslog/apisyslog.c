@@ -5,7 +5,7 @@
  *      Author: bruno
  */
 
-#define _GNU_SOURCE         /* Consultez feature_test_macros(7) */
+//#define _GNU_SOURCE         /* Consultez feature_test_macros(7) */
 #include <unistd.h>
 #include <sys/syscall.h>   /* Pour les définitions de SYS_xxx */
 
@@ -496,7 +496,7 @@ int apisyslog_StartThread()
         struct timespec vDate = {0,0};
         struct timespec vTimeout = {0,1e9/100}; // 10ms
 
-        ADD_TIMESPEC_REAL(vTimeout,vDate)
+        timeradd_real(vTimeout,&vDate);
 
         errno = 0;
         result = sem_timedwait(&g_Config.semaphore,&vDate);
