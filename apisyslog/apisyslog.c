@@ -26,9 +26,9 @@
 
 #include <string.h>
 
-#include "utils.h"
 #include "apisyslog_int.h"
 #include "apisyslog.h"
+#include "utilstools.h"
 
 // #define PRINT_DBG 1
 
