@@ -101,8 +101,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="pthread"/>
                                     									
-                                    <listOptionValue builtIn="false" value="utilstools"/>
-                                    									
                                     <listOptionValue builtIn="false" value="rt"/>
                                     								
                                 </option>

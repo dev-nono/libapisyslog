@@ -28,7 +28,7 @@
 
 #include "apisyslog_int.h"
 #include "apisyslog.h"
-#include "utilstools.h"
+#include "utilstools_time.h"
 
 // #define PRINT_DBG 1
 
@@ -496,7 +496,7 @@ int apisyslog_StartThread()
         struct timespec vDate = {0,0};
         struct timespec vTimeout = {0,1e9/100}; // 10ms
 
-        timeradd_real(vTimeout,&vDate);
+        timeradd_real_macro(vTimeout,vDate);
 
         errno = 0;
         result = sem_timedwait(&g_Config.semaphore,&vDate);
