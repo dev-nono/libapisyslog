@@ -1,0 +1,8 @@
+/.metadata/
+*.o
+*.d
+*.mk
+makefile
+Debug
+
+

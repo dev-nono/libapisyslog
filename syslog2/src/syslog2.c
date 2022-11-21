@@ -27,13 +27,13 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
-#endif /* LIBC_SCCS and not lint */
+//#if defined(LIBC_SCCS) && !defined(lint)
+//static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
+//#endif /* LIBC_SCCS and not lint */
+
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/syslog.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <netdb.h>
@@ -54,13 +54,14 @@ static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
 
 #include <stdarg.h>
 
+#include "syslog2.h"
 
 //#include <libio/iolibio.h>
 //#include <math_ldbl_opt.h>
 
 //#include <kernel-features.h>
 
-#define ftell(s) _IO_ftell (s)
+//#define ftell(s) _IO_ftell (s)
 
 static int	LogType = SOCK_DGRAM;	/* type of socket connection */
 static int	LogFile = -1;		/* fd for log */
@@ -124,7 +125,7 @@ syslog_chk(int pri, int flag, const char *fmt, ...)
  *	print message on log file; output is intended for syslogd(8).
  */
 void
-syslog(int pri, const char *fmt, ...)
+syslog2(int pri, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -148,10 +149,11 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 	char *buf = 0;
 	size_t bufsize = 0;
 	size_t msgoff;
-#ifndef NO_SIGPIPE
- 	struct sigaction action, oldaction;
- 	int sigpipe;
-#endif
+//#ifndef NO_SIGPIPE
+// 	struct sigaction action={0};
+// 	struct sigaction oldaction={0};
+// 	int sigpipe;
+//#endif
 	int saved_errno = errno;
 	char failbuf[3 * sizeof (pid_t) + sizeof "out of memory []"];
 
@@ -179,7 +181,7 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 	       emitting an error messages.  */
 	    char numbuf[3 * sizeof (pid_t)];
 	    char *nump;
-	    char *endp = __stpcpy (failbuf, "out of memory [");
+	    char *endp = strcpy (failbuf, "out of memory [");
 	    pid_t pid = getpid ();
 
 	    nump = numbuf + sizeof (numbuf);
@@ -231,7 +233,7 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 	    fprintf (hFileStream, " %02d:%02d:%02d.%06ld ",
 	    		pTm->tm_hour,pTm->tm_min,pTm->tm_sec,tv.tv_usec);
 	    //if (LogStat & LOG_PID)
-	    fprintf (hFileStream, " %d ", (int) __getpid ());
+	    fprintf (hFileStream, " %d ", (int) getpid ());
 	    if (LogTag != NULL)
 	      {
 		putc_unlocked (':', hFileStream);
@@ -458,9 +460,9 @@ closelog (void)
 //  __libc_cleanup_pop (1);
 }
 
+#if 0
 /* setlogmask -- set the log mask level */
-int
-setlogmask (int pmask)
+int setlogmask (int pmask)
 {
 	int omask;
 
@@ -469,3 +471,4 @@ setlogmask (int pmask)
 		LogMask = pmask;
 	return (omask);
 }
+#endif

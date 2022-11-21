@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
 //	time_dateNano(argc,argv);
 
-	syslog(0,"*************");
+	syslog(LOG_DEBUG,"*************");
 
 
 	return EXIT_SUCCESS;
