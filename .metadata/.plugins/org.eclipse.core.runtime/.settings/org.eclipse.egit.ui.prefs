@@ -5,7 +5,7 @@ HistoryView_MaxBranchLength=35
 HistoryView_MaxTagLength=35
 StagingView_Presentation=TREE
 StagingView_SyncWithSelection=true
-commit_dialog_history_messages=<?xml version\="1.0" encoding\="UTF-8"?>\n<messages>\n<message>remove files</message>\n<message>add gitignore</message>\n<message>save</message>\n<message>update</message>\n</messages>
+commit_dialog_history_messages=<?xml version\="1.0" encoding\="UTF-8"?>\n<messages>\n<message>save&\#x0A;</message>\n<message>save</message>\n<message>files for prj</message>\n<message>remove files</message>\n<message>add gitignore</message>\n<message>update</message>\n</messages>
 eclipse.preferences.version=1
 repositories_view_filters=<?xml version\="1.0" encoding\="UTF-8"?>\n<FilterCache/>
 resourcehistory_graph_split=500,500
