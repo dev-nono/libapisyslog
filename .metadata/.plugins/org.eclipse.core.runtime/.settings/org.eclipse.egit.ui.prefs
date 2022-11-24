@@ -1,0 +1,16 @@
+//BranchProjectTracker__/home/vagrant/git/libapisyslog/.git_local=<?xml version\="1.0" encoding\="UTF-8"?>\n<projects>\n<project>/apisyslog</project>\n<project>/cli_static</project>\n<project>/cli_syslog</project>\n<project>/syslog2</project>\n</projects>
+//BranchProjectTracker__/home/vagrant/git/libapisyslog/.git_master=<?xml version\="1.0" encoding\="UTF-8"?>\n<projects>\n<project>/apisyslog</project>\n<project>/cli_static</project>\n<project>/cli_syslog</project>\n</projects>
+//BranchProjectTracker__/home/vagrant/git/libapisyslog/.git_save=<?xml version\="1.0" encoding\="UTF-8"?>\n<projects>\n<project>/apisyslog</project>\n<project>/cli_static</project>\n<project>/cli_syslog</project>\n<project>/syslog2</project>\n</projects>
+HistoryView_MaxBranchLength=35
+HistoryView_MaxTagLength=35
+StagingView_Presentation=TREE
+StagingView_SyncWithSelection=true
+commit_dialog_history_messages=<?xml version\="1.0" encoding\="UTF-8"?>\n<messages>\n<message>remove files</message>\n<message>add gitignore</message>\n<message>save</message>\n<message>update</message>\n</messages>
+eclipse.preferences.version=1
+repositories_view_filters=<?xml version\="1.0" encoding\="UTF-8"?>\n<FilterCache/>
+resourcehistory_graph_split=500,500
+resourcehistory_rev_split=700,300
+resourcehistory_selected_ref_filters_.git=HEAD\:refs/heads/**\:refs/remotes/**\:refs/tags/**
+resourcehistory_show_additionalrefs=true
+resourcehistory_show_all_branches=true
+resourcehistory_show_notes=true

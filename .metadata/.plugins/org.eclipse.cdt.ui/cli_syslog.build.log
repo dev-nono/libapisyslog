@@ -1,0 +1,23 @@
+13:28:13 **** Build of configuration Debug for project cli_syslog ****
+make -j6 all 
+make clean
+make[2]: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
+rm -rf ./src/cli_syslog.d ./src/cli_syslog.o
+rm -rf cli_syslog
+ 
+ 
+Building file: ../src/cli_syslog.c
+Invoking: GCC C Compiler
+gcc -I"/home/vagrant/git/libapisyslog/apisyslog" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"src/cli_syslog.d" -MT"src/cli_syslog.o" -o "src/cli_syslog.o" "../src/cli_syslog.c"
+../src/cli_syslog.c:17:24: fatal error: utilstools.h: No such file or directory
+ #include "utilstools.h"
+                        ^
+compilation terminated.
+src/subdir.mk:18: recipe for target 'src/cli_syslog.o' failed
+makefile:35: recipe for target 'all' failed
+make[1]: *** [src/cli_syslog.o] Error 1
+make: *** [all] Error 2
+"make -j6 all" terminated with exit code 2. Build might be incomplete.
+
+13:28:13 Build Failed. 5 errors, 0 warnings. (took 352ms)
+

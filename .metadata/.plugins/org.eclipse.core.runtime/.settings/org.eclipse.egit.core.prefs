@@ -1,0 +1,6 @@
+GitRepositoriesView.GitDirectories=/home/vagrant/git/libapisyslog/.git\:
+GitRepositoriesView.GitDirectories.relative=.git\:
+core_auto_stage_deletion=true
+core_git_servers=
+core_preferredMergeStrategy=jgit-default-mergeStrategy
+eclipse.preferences.version=1
