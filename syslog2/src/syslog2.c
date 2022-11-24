@@ -27,13 +27,9 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
-#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/syslog.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <netdb.h>
@@ -54,13 +50,14 @@ static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
 
 #include <stdarg.h>
 
+#include "syslog2.h"
 
 //#include <libio/iolibio.h>
 //#include <math_ldbl_opt.h>
 
 //#include <kernel-features.h>
 
-#define ftell(s) _IO_ftell (s)
+//#define ftell(s) _IO_ftell (s)
 
 static int	LogType = SOCK_DGRAM;	/* type of socket connection */
 static int	LogFile = -1;		/* fd for log */
@@ -106,11 +103,8 @@ struct cleanup_arg
 //  __libc_lock_unlock (syslog_lock);
 //}
 
-void vsyslog_chk(int pri, int flag, const char *fmt, va_list ap);
 
-
-void
-syslog_chk(int pri, int flag, const char *fmt, ...)
+void syslog_chk(int pri, int flag, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -123,24 +117,54 @@ syslog_chk(int pri, int flag, const char *fmt, ...)
  * syslog, vsyslog --
  *	print message on log file; output is intended for syslogd(8).
  */
-void
-syslog(int pri, const char *fmt, ...)
+/*************************************
+ * @fn void syslog2(int, const char*, ...)
+ * @brief syslog, vsyslog --
+ * 			print message on log file; output is intended for syslogd(8).
+ *
+ * @pre
+ * @post
+ * @param a_Pri
+ * @param a_Fmt
+ */
+void syslog2(int a_Pri, const char *a_Fmt, ...)
 {
 	va_list ap;
 
-	va_start(ap, fmt);
-	vsyslog_chk(pri, -1, fmt, ap);
+	va_start(ap, a_Fmt);
+	vsyslog_chk(a_Pri, -1, a_Fmt, ap);
 	va_end(ap);
 }
-//ldbl_hidden_def (__syslog, syslog)
-//ldbl_strong_alias (__syslog, syslog)
-
-
-void
-vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
+/*****************************************
+ * @fn int printDate()
+ * @brief
+ *
+ * @pre
+ * @post
+ * @return
+ */
+int printDate()
 {
 	int result = 0;
-#if 1
+
+	return result;
+}
+/**********************************
+ * @fn void vsyslog_chk(int, int, const char*, va_list)
+ * @brief
+ *
+ * @pre
+ * @post
+ * @param a_Pri
+ * @param a_Flag
+ * @param a_Fmt
+ * @param a_ArgList
+ */
+
+void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
+{
+	int result = 0;
+
 	struct tm now_tm;
 	time_t now;
 	int fd;
@@ -148,28 +172,23 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 	char *buf = 0;
 	size_t bufsize = 0;
 	size_t msgoff;
-#ifndef NO_SIGPIPE
- 	struct sigaction action, oldaction;
- 	int sigpipe;
-#endif
-	int saved_errno = errno;
 	char failbuf[3 * sizeof (pid_t) + sizeof "out of memory []"];
 
 #define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
 	//* Check for invalid bits.
-	if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
+	if (a_Pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
 		syslog(INTERNALLOG,
-		    "syslog: unknown facility/priority: %x", pri);
-		pri &= LOG_PRIMASK|LOG_FACMASK;
+		    "syslog: unknown facility/priority: %x", a_Pri);
+		a_Pri &= LOG_PRIMASK|LOG_FACMASK;
 	}
 
 	/* Check priority against setlogmask values. */
-	if ((LOG_MASK (LOG_PRI (pri)) & LogMask) == 0)
+	if ((LOG_MASK (LOG_PRI (a_Pri)) & LogMask) == 0)
 		return;
 
 	/* Set default facility if none specified. */
-	if ((pri & LOG_FACMASK) == 0)
-		pri |= LogFacility;
+	if ((a_Pri & LOG_FACMASK) == 0)
+		a_Pri |= LogFacility;
 
 	/* Build the message in a memory-buffer stream.  */
 	hFileStream = open_memstream (&buf, &bufsize);
@@ -199,12 +218,14 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 	else
 	  {
 	    __fsetlocking (hFileStream, FSETLOCKING_BYCALLER);
-	    fprintf (hFileStream, "<%d>", pri);
+	    fprintf (hFileStream, "<%d>", a_Pri);
 
 	    struct timeval tv = {0.0};
 	    struct tm *pTm = 0;
 		//time_t now;
-
+	    //*****************************************************
+	    //*				DATE
+	    //*****************************************************
 	    result = gettimeofday(&tv,0);
 	    //(void) time (&now);
 	    now = tv.tv_sec;
@@ -231,7 +252,7 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 	    fprintf (hFileStream, " %02d:%02d:%02d.%06ld ",
 	    		pTm->tm_hour,pTm->tm_min,pTm->tm_sec,tv.tv_usec);
 	    //if (LogStat & LOG_PID)
-	    fprintf (hFileStream, " %d ", (int) __getpid ());
+	    fprintf (hFileStream, " %d ", (int) getpid ());
 	    if (LogTag != NULL)
 	      {
 		putc_unlocked (':', hFileStream);
@@ -243,17 +264,18 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 
 	    /* We have the header.  Print the user's format into the
                buffer.  */
-	    if (flag == -1)
-	      vfprintf (hFileStream, fmt, ap);
+	    if (a_Flag == -1)
+	      vfprintf (hFileStream, a_Fmt, a_ArgList);
 	    else
-	      __vfprintf_chk (hFileStream, flag, fmt, ap);
+	      __vfprintf_chk (hFileStream, a_Flag, a_Fmt, a_ArgList);
 
 	    /* Close the memory stream; this will finalize the data
 	       into a malloc'd buffer in BUF.  */
 	    fclose (hFileStream);
 	  }
 
-	/* Output to stderr if requested. */
+#if 0
+	//* Output to stderr if requested.
 	if (LogStat & LOG_PERROR) {
 		struct iovec iov[2];
 		struct iovec *v = iov;
@@ -275,24 +297,8 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 
 //		__libc_cleanup_pop (0);
 	}
+#endif
 
-	/* Prepare for multiple users.  We have to take care: open and
-	   write are cancellation points.  */
-//	struct cleanup_arg clarg;
-//	clarg.buf = buf;
-//	clarg.oldaction = NULL;
-//	__libc_cleanup_push (cancel_handler, &clarg);
-//	__libc_lock_lock (syslog_lock);
-
-//#ifndef NO_SIGPIPE
-//	/* Prepare for a broken connection.  */
-// 	memset (&action, 0, sizeof (action));
-// 	action.sa_handler = sigpipe_handler;
-// 	sigemptyset (&action.sa_mask);
-// 	sigpipe = __sigaction (SIGPIPE, &action, &oldaction);
-//	if (sigpipe == 0)
-//	  clarg.oldaction = &oldaction;
-//#endif
 
 	/* Get connected, output the message to the local logger. */
 	if (!connected)
@@ -322,27 +328,21 @@ vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 		 * Make sure the error reported is the one from the
 		 * syslogd failure.
 		 */
+#if 0
 		if (LogStat & LOG_CONS &&
 		    (fd = open(_PATH_CONSOLE, O_WRONLY|O_NOCTTY, 0)) >= 0)
 		  {
 		    dprintf (fd, "%s\r\n", buf + msgoff);
 		    (void)close(fd);
 		  }
+#endif
 	      }
 	  }
 
-//#ifndef NO_SIGPIPE
-//	if (sigpipe == 0)
-//		__sigaction (SIGPIPE, &oldaction, (struct sigaction *) NULL);
-//#endif
-
-	/* End of critical section.  */
-//	__libc_cleanup_pop (0);
-//	__libc_lock_unlock (syslog_lock);
 
 	if (buf != failbuf)
 		free (buf);
-#endif
+
 }
 //libc_hidden_def (__vsyslog_chk)
 

@@ -33,6 +33,9 @@
  #undef syslog
 
 void syslog2(int pri, const char *fmt, ...);
+void syslog21(int a_LogOptions, int a_Pri, const char *a_Fmt, ...);
 
+void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList);
+void syslog_chk(int pri, int flag, const char *fmt, ...);
 
 #endif /* SYSLOG2_H_ */
