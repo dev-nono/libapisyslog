@@ -10,16 +10,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog_light.h>
 
 #include "tst_time.h"
-#include "syslog2.h"
 
 int main(int argc, char **argv)
 {
 
 //	time_dateNano(argc,argv);
 
-	syslog2(0,"*************");
+	syslog_lg(0,"*************");
 
 
 	return EXIT_SUCCESS;

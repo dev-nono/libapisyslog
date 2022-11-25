@@ -163,7 +163,7 @@ int apisyslog_init(const char* a_ConfigFilemame)
 #endif
     strncpy(g_Config.prefix,"PREFIX",100-1);
 
-    openlog(g_Config.prefix, LOG_NDELAY | LOG_PID , LOG_LOCAL7);
+    openlog_lg(g_Config.prefix, LOG_NDELAY | LOG_PID , LOG_LOCAL7);
 
     result = apisyslog_StartThread();
 

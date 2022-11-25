@@ -27,13 +27,16 @@
  * SUCH DAMAGE.
  */
 
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/syslog.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <netdb.h>
-#include <sys/time.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -50,14 +53,12 @@
 
 #include <stdarg.h>
 
-#include "syslog2.h"
+#include <libio/iolibio.h>
+#include <math_ldbl_opt.h>
 
-//#include <libio/iolibio.h>
-//#include <math_ldbl_opt.h>
+#include <kernel-features.h>
 
-//#include <kernel-features.h>
-
-//#define ftell(s) _IO_ftell (s)
+#define ftell(s) _IO_ftell (s)
 
 static int	LogType = SOCK_DGRAM;	/* type of socket connection */
 static int	LogFile = -1;		/* fd for log */
@@ -69,12 +70,12 @@ static int	LogMask = 0xff;		/* mask of priorities to be logged */
 extern char	*__progname;		/* Program name, from crt0. */
 
 /* Define the lock.  */
-//__libc_lock_define_initialized (static, syslog_lock)
+__libc_lock_define_initialized (static, syslog_lock)
 
 static void openlog_internal(const char *, int, int);
 static void closelog_internal(void);
 #ifndef NO_SIGPIPE
-//static void sigpipe_handler (int);
+static void sigpipe_handler (int);
 #endif
 
 #ifndef send_flags
@@ -87,119 +88,91 @@ struct cleanup_arg
   struct sigaction *oldaction;
 };
 
+static void
+cancel_handler (void *ptr)
+{
+#ifndef NO_SIGPIPE
+  /* Restore the old signal handler.  */
+  struct cleanup_arg *clarg = (struct cleanup_arg *) ptr;
 
-//static void
-//cancel_handler (void *ptr)
-//{
-//#ifndef NO_SIGPIPE
-//  /* Restore the old signal handler.  */
-//  struct cleanup_arg *clarg = (struct cleanup_arg *) ptr;
-//
-//  if (clarg != NULL && clarg->oldaction != NULL)
-//    __sigaction (SIGPIPE, clarg->oldaction, NULL);
-//#endif
+  if (clarg != NULL && clarg->oldaction != NULL)
+    __sigaction (SIGPIPE, clarg->oldaction, NULL);
+#endif
 
   /* Free the lock.  */
-//  __libc_lock_unlock (syslog_lock);
-//}
-
-
-void syslog_chk(int pri, int flag, const char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	vsyslog_chk(pri, flag, fmt, ap);
-	va_end(ap);
+  __libc_lock_unlock (syslog_lock);
 }
+
 
 /*
  * syslog, vsyslog --
  *	print message on log file; output is intended for syslogd(8).
  */
-/*************************************
- * @fn void syslog2(int, const char*, ...)
- * @brief syslog, vsyslog --
- * 			print message on log file; output is intended for syslogd(8).
- *
- * @pre
- * @post
- * @param a_Pri
- * @param a_Fmt
- */
-void syslog2(int a_Pri, const char *a_Fmt, ...)
+void
+__syslog(int pri, const char *fmt, ...)
 {
 	va_list ap;
 
-	va_start(ap, a_Fmt);
-	vsyslog_chk(a_Pri, -1, a_Fmt, ap);
+	va_start(ap, fmt);
+	__vsyslog_chk(pri, -1, fmt, ap);
 	va_end(ap);
 }
-/*****************************************
- * @fn int printDate()
- * @brief
- *
- * @pre
- * @post
- * @return
- */
-int printDate()
-{
-	int result = 0;
+ldbl_hidden_def (__syslog, syslog)
+ldbl_strong_alias (__syslog, syslog)
 
-	return result;
+void
+__syslog_chk(int pri, int flag, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	__vsyslog_chk(pri, flag, fmt, ap);
+	va_end(ap);
 }
-/**********************************
- * @fn void vsyslog_chk(int, int, const char*, va_list)
- * @brief
- *
- * @pre
- * @post
- * @param a_Pri
- * @param a_Flag
- * @param a_Fmt
- * @param a_ArgList
- */
 
-void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
+void
+__vsyslog_chk(int pri, int flag, const char *fmt, va_list ap)
 {
-	int result = 0;
-
 	struct tm now_tm;
 	time_t now;
 	int fd;
-	FILE *hFileStream;
+	FILE *f;
 	char *buf = 0;
 	size_t bufsize = 0;
 	size_t msgoff;
+#ifndef NO_SIGPIPE
+ 	struct sigaction action, oldaction;
+ 	int sigpipe;
+#endif
+	int saved_errno = errno;
 	char failbuf[3 * sizeof (pid_t) + sizeof "out of memory []"];
 
 #define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
-	//* Check for invalid bits.
-	if (a_Pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
+	/* Check for invalid bits. */
+	if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
 		syslog(INTERNALLOG,
-		    "syslog: unknown facility/priority: %x", a_Pri);
-		a_Pri &= LOG_PRIMASK|LOG_FACMASK;
+		    "syslog: unknown facility/priority: %x", pri);
+		pri &= LOG_PRIMASK|LOG_FACMASK;
 	}
 
 	/* Check priority against setlogmask values. */
-	if ((LOG_MASK (LOG_PRI (a_Pri)) & LogMask) == 0)
+	if ((LOG_MASK (LOG_PRI (pri)) & LogMask) == 0)
 		return;
 
 	/* Set default facility if none specified. */
-	if ((a_Pri & LOG_FACMASK) == 0)
-		a_Pri |= LogFacility;
+	if ((pri & LOG_FACMASK) == 0)
+		pri |= LogFacility;
 
 	/* Build the message in a memory-buffer stream.  */
-	hFileStream = open_memstream (&buf, &bufsize);
-	if (hFileStream == NULL)
+	f = __open_memstream (&buf, &bufsize);
+	if (f == NULL)
 	  {
 	    /* We cannot get a stream.  There is not much we can do but
 	       emitting an error messages.  */
 	    char numbuf[3 * sizeof (pid_t)];
 	    char *nump;
 	    char *endp = __stpcpy (failbuf, "out of memory [");
-	    pid_t pid = getpid ();
+	    pid_t pid = __getpid ();
 
 	    nump = numbuf + sizeof (numbuf);
 	    /* The PID can never be zero.  */
@@ -207,8 +180,7 @@ void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
 	      *--nump = '0' + pid % 10;
 	    while ((pid /= 10) != 0);
 
-//	    endp = mempcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
-	    endp = memcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
+	    endp = __mempcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
 	    *endp++ = ']';
 	    *endp = '\0';
 	    buf = failbuf;
@@ -217,65 +189,44 @@ void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
 	  }
 	else
 	  {
-	    __fsetlocking (hFileStream, FSETLOCKING_BYCALLER);
-	    fprintf (hFileStream, "<%d>", a_Pri);
-
-	    struct timeval tv = {0.0};
-	    struct tm *pTm = 0;
-		//time_t now;
-	    //*****************************************************
-	    //*				DATE
-	    //*****************************************************
-	    result = gettimeofday(&tv,0);
-	    //(void) time (&now);
-	    now = tv.tv_sec;
-	    pTm = gmtime(&now);
-
-	    printf("tv_sec=%ld tv.tv_usec=%06ld \n",tv.tv_sec,tv.tv_usec);
-	    printf(" %02d:%02d:%02d\n",
-	    		pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
-
-
-//	    hFileStream->_IO_write_ptr += strftime (hFileStream->_IO_write_ptr,
-//					      hFileStream->_IO_write_end
-//					      - hFileStream->_IO_write_ptr,
-//					      "%h %e %T ",
-//						  localtime_r (&now, &now_tm));
-	    //_nl_C_locobj_ptr);
-	    msgoff = ftell (hFileStream);
-
+	    __fsetlocking (f, FSETLOCKING_BYCALLER);
+	    fprintf (f, "<%d>", pri);
+	    (void) time (&now);
+	    f->_IO_write_ptr += __strftime_l (f->_IO_write_ptr,
+					      f->_IO_write_end
+					      - f->_IO_write_ptr,
+					      "%h %e %T ",
+					      __localtime_r (&now, &now_tm),
+					      _nl_C_locobj_ptr);
+	    msgoff = ftell (f);
 	    if (LogTag == NULL)
 	      LogTag = __progname;
 	    if (LogTag != NULL)
-	      fputs_unlocked (LogTag, hFileStream);
-
-	    fprintf (hFileStream, " %02d:%02d:%02d.%06ld ",
-	    		pTm->tm_hour,pTm->tm_min,pTm->tm_sec,tv.tv_usec);
-	    //if (LogStat & LOG_PID)
-	    fprintf (hFileStream, " %d ", (int) getpid ());
+	      __fputs_unlocked (LogTag, f);
+	    if (LogStat & LOG_PID)
+	      fprintf (f, "[%d]", (int) __getpid ());
 	    if (LogTag != NULL)
 	      {
-		putc_unlocked (':', hFileStream);
-		putc_unlocked (' ', hFileStream);
+		__putc_unlocked (':', f);
+		__putc_unlocked (' ', f);
 	      }
 
 	    /* Restore errno for %m format.  */
-//	    __set_errno (saved_errno);
+	    __set_errno (saved_errno);
 
 	    /* We have the header.  Print the user's format into the
                buffer.  */
-	    if (a_Flag == -1)
-	      vfprintf (hFileStream, a_Fmt, a_ArgList);
+	    if (flag == -1)
+	      vfprintf (f, fmt, ap);
 	    else
-	      __vfprintf_chk (hFileStream, a_Flag, a_Fmt, a_ArgList);
+	      __vfprintf_chk (f, flag, fmt, ap);
 
 	    /* Close the memory stream; this will finalize the data
 	       into a malloc'd buffer in BUF.  */
-	    fclose (hFileStream);
+	    fclose (f);
 	  }
 
-#if 0
-	//* Output to stderr if requested.
+	/* Output to stderr if requested. */
 	if (LogStat & LOG_PERROR) {
 		struct iovec iov[2];
 		struct iovec *v = iov;
@@ -290,15 +241,31 @@ void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
 		    v->iov_len = 1;
 		  }
 
-//		__libc_cleanup_push (free, buf == failbuf ? NULL : buf);
+		__libc_cleanup_push (free, buf == failbuf ? NULL : buf);
 
 		/* writev is a cancellation point.  */
-		(void)writev(STDERR_FILENO, iov, v - iov + 1);
+		(void)__writev(STDERR_FILENO, iov, v - iov + 1);
 
-//		__libc_cleanup_pop (0);
+		__libc_cleanup_pop (0);
 	}
-#endif
 
+	/* Prepare for multiple users.  We have to take care: open and
+	   write are cancellation points.  */
+	struct cleanup_arg clarg;
+	clarg.buf = buf;
+	clarg.oldaction = NULL;
+	__libc_cleanup_push (cancel_handler, &clarg);
+	__libc_lock_lock (syslog_lock);
+
+#ifndef NO_SIGPIPE
+	/* Prepare for a broken connection.  */
+ 	memset (&action, 0, sizeof (action));
+ 	action.sa_handler = sigpipe_handler;
+ 	sigemptyset (&action.sa_mask);
+ 	sigpipe = __sigaction (SIGPIPE, &action, &oldaction);
+	if (sigpipe == 0)
+	  clarg.oldaction = &oldaction;
+#endif
 
 	/* Get connected, output the message to the local logger. */
 	if (!connected)
@@ -309,7 +276,7 @@ void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
 	if (LogType == SOCK_STREAM)
 	  ++bufsize;
 
-	if (!connected || send(LogFile, buf, bufsize, send_flags) < 0)
+	if (!connected || __send(LogFile, buf, bufsize, send_flags) < 0)
 	  {
 	    if (connected)
 	      {
@@ -319,7 +286,7 @@ void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
 		openlog_internal(LogTag, LogStat | LOG_NDELAY, 0);
 	      }
 
-	    if (!connected || send(LogFile, buf, bufsize, send_flags) < 0)
+	    if (!connected || __send(LogFile, buf, bufsize, send_flags) < 0)
 	      {
 		closelog_internal ();	/* attempt re-open next time */
 		/*
@@ -328,34 +295,38 @@ void vsyslog_chk(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
 		 * Make sure the error reported is the one from the
 		 * syslogd failure.
 		 */
-#if 0
 		if (LogStat & LOG_CONS &&
-		    (fd = open(_PATH_CONSOLE, O_WRONLY|O_NOCTTY, 0)) >= 0)
+		    (fd = __open(_PATH_CONSOLE, O_WRONLY|O_NOCTTY, 0)) >= 0)
 		  {
-		    dprintf (fd, "%s\r\n", buf + msgoff);
-		    (void)close(fd);
+		    __dprintf (fd, "%s\r\n", buf + msgoff);
+		    (void)__close(fd);
 		  }
-#endif
 	      }
 	  }
 
+#ifndef NO_SIGPIPE
+	if (sigpipe == 0)
+		__sigaction (SIGPIPE, &oldaction, (struct sigaction *) NULL);
+#endif
+
+	/* End of critical section.  */
+	__libc_cleanup_pop (0);
+	__libc_lock_unlock (syslog_lock);
 
 	if (buf != failbuf)
 		free (buf);
-
 }
-//libc_hidden_def (__vsyslog_chk)
+libc_hidden_def (__vsyslog_chk)
 
 void
-vsyslog(int pri, const char *fmt, va_list ap)
+__vsyslog(int pri, const char *fmt, va_list ap)
 {
-  vsyslog_chk (pri, -1, fmt, ap);
+  __vsyslog_chk (pri, -1, fmt, ap);
 }
-//ldbl_hidden_def (__vsyslog, vsyslog)
-//ldbl_weak_alias (__vsyslog, vsyslog)
+ldbl_hidden_def (__vsyslog, vsyslog)
+ldbl_weak_alias (__vsyslog, vsyslog)
 
-//static struct sockaddr_un SyslogAddr;	/* AF_UNIX address of local logger */
-static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
+static struct sockaddr_un SyslogAddr;	/* AF_UNIX address of local logger */
 
 
 static void
@@ -368,35 +339,28 @@ openlog_internal(const char *ident, int logstat, int logfac)
 		LogFacility = logfac;
 
 	int retry = 0;
-	while (retry < 2)
-	{
-		if (LogFile == -1)
-		{
-//			SyslogAddr.sun_family = AF_UNIX;
-//			(void)strncpy(SyslogAddr.sun_path, _PATH_LOG,
-//				      sizeof(SyslogAddr.sun_path));
-
-			SyslogAddr.sa_family = AF_UNIX;
-			(void)strncpy(SyslogAddr.sa_data, _PATH_LOG,
-				      sizeof(SyslogAddr.sa_data));
-
+	while (retry < 2) {
+		if (LogFile == -1) {
+			SyslogAddr.sun_family = AF_UNIX;
+			(void)strncpy(SyslogAddr.sun_path, _PATH_LOG,
+				      sizeof(SyslogAddr.sun_path));
 			if (LogStat & LOG_NDELAY) {
-			  LogFile = socket(AF_UNIX, LogType | SOCK_CLOEXEC, 0);
+			  LogFile = __socket(AF_UNIX, LogType | SOCK_CLOEXEC, 0);
 			  if (LogFile == -1)
 			    return;
 			}
 		}
 		if (LogFile != -1 && !connected)
 		{
-//			int old_errno = errno;
-			if (connect(LogFile, &SyslogAddr, sizeof(SyslogAddr))
+			int old_errno = errno;
+			if (__connect(LogFile, &SyslogAddr, sizeof(SyslogAddr))
 			    == -1)
 			{
 				int saved_errno = errno;
 				int fd = LogFile;
 				LogFile = -1;
-				(void)close(fd);
-//				__set_errno (old_errno);
+				(void)__close(fd);
+				__set_errno (old_errno);
 				if (saved_errno == EPROTOTYPE)
 				{
 					/* retry with the other type: */
@@ -416,21 +380,21 @@ void
 openlog (const char *ident, int logstat, int logfac)
 {
   /* Protect against multiple users and cancellation.  */
-//  __libc_cleanup_push (cancel_handler, NULL);
-//  __libc_lock_lock (syslog_lock);
+  __libc_cleanup_push (cancel_handler, NULL);
+  __libc_lock_lock (syslog_lock);
 
   openlog_internal (ident, logstat, logfac);
 
-//  __libc_cleanup_pop (1);
+  __libc_cleanup_pop (1);
 }
 
-//#ifndef NO_SIGPIPE
-//static void
-//sigpipe_handler (int signo)
-//{
-//  closelog_internal ();
-//}
-//#endif
+#ifndef NO_SIGPIPE
+static void
+sigpipe_handler (int signo)
+{
+  closelog_internal ();
+}
+#endif
 
 static void
 closelog_internal (void)
@@ -438,7 +402,7 @@ closelog_internal (void)
   if (!connected)
     return;
 
-  close (LogFile);
+  __close (LogFile);
   LogFile = -1;
   connected = 0;
 }
@@ -447,15 +411,15 @@ void
 closelog (void)
 {
   /* Protect against multiple users and cancellation.  */
-//  __libc_cleanup_push (cancel_handler, NULL);
-//  __libc_lock_lock (syslog_lock);
+  __libc_cleanup_push (cancel_handler, NULL);
+  __libc_lock_lock (syslog_lock);
 
   closelog_internal ();
   LogTag = NULL;
   LogType = SOCK_DGRAM; /* this is the default */
 
   /* Free the lock.  */
-//  __libc_cleanup_pop (1);
+  __libc_cleanup_pop (1);
 }
 
 /* setlogmask -- set the log mask level */

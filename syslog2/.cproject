@@ -52,11 +52,11 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.1775273174.1593951149" name="syslog.c" rcbsApplicability="disable" resourcePath="src/syslog.c" toolsToInvoke="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2083344312.979749987">
-						<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2083344312.979749987" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2083344312"/>
+					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.1775273174.779031835" name="syslog2.c" rcbsApplicability="disable" resourcePath="src/syslog2.c" toolsToInvoke="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2083344312.1149549118">
+						<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2083344312.1149549118" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.2083344312"/>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="syslog.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="syslog2.c|syslog.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -113,11 +113,11 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.exe.release.381278783.734789213" name="syslog.c" rcbsApplicability="disable" resourcePath="src/syslog.c" toolsToInvoke="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1569635808.944918049">
-						<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1569635808.944918049" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1569635808"/>
+					<fileInfo id="cdt.managedbuild.config.gnu.exe.release.381278783.2104024" name="syslog2.c" rcbsApplicability="disable" resourcePath="src/syslog2.c" toolsToInvoke="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1569635808.1042444859">
+						<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1569635808.1042444859" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1569635808"/>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="syslog.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="syslog2.c|syslog.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
