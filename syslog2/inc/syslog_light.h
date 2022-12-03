@@ -31,8 +31,6 @@
  Nov 21 15:24:48.123456789 	buildsystem      nmbd[594]: 	[2022/11/21 15:24:48.031550,  0] ../source3/nmbd/nmbd_workgroupdb.c:57(name_to_unstring)
 
  DATE 	TIMESTAMP 	HOSTNAME  	PROCESS_NAME PID	FUNCTIOn IN/OUT	MSG...
-
-
  */
 
 #define SYSLOG_MS			(1<<0)
@@ -52,12 +50,13 @@
 #define SYSLOG_IN_STR	"_IN"
 #define SYSLOG_OUT_STR	"_OUT"
 
-//void syslog_ng(int pri, const char *fmt, ...);
-//void syslog31(int a_LogOptions, int a_Pri, const char *a_Fmt, ...);
-//void syslog32(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
 
 void openlog_ng(const char *ident, int option, int facility);
+
 void syslog_ng(int priority, const char *format, ...);
+void syslog2_ng(int a_LogOptions, int a_Pri, const char *a_Fmt, ...);
+void syslog3_ng(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
+
 void closelog_ng(void);
 void vsyslog_ng(int priority, const char *format, va_list ap);
 
