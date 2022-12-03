@@ -51,6 +51,9 @@
 
 #include <syslog_light.h>
 
+//**********************************************************
+//********	STATIC VARIABLES   *****************************
+//**********************************************************
 
 static int	LogType = SOCK_DGRAM;	/* type of socket connection */
 static int	LogFile = -1;		/* fd for log */
@@ -61,35 +64,20 @@ static int	LogFacility = LOG_USER;	/* default facility code */
 static int	LogMask = 0xff;		/* mask of priorities to be logged */
 extern char	*__progname;		/* Program name, from crt0. */
 
+//static struct sockaddr_un SyslogAddr;	/* AF_UNIX address of local logger */
+static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
 
-static void openlog_internal_lg(const char *, int, int);
-static void closelog_internal_lg(void);
+
+
+//**********************************************************
+//********	STATIC FUNCTION   ******************************
+//**********************************************************
+static int printDate_ng();
 
 #ifndef send_flags
 # define send_flags 0
 #endif
 
-static void vsyslog_chk_lg(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList);
-static void syslog_chk_lg(int pri, int flag, const char *fmt, ...);
-
-/*****************
- * @fn void syslog_chk(int, int, const char*, ...)
- * @brief
- *
- * @pre
- * @post
- * @param pri
- * @param flag
- * @param fmt
- */
-static void syslog_chk_lg(int pri, int flag, const char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	vsyslog_chk_lg(pri, flag, fmt, ap);
-	va_end(ap);
-}
 
 /*
  * syslog, vsyslog --
@@ -105,12 +93,12 @@ static void syslog_chk_lg(int pri, int flag, const char *fmt, ...)
  * @param a_Pri
  * @param a_Fmt
  */
-void syslog_lg(int a_Pri, const char *a_Fmt, ...)
+void syslog_ng(int a_Pri, const char *a_Fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, a_Fmt);
-	vsyslog_chk_lg(a_Pri, -1, a_Fmt, ap);
+	vsyslog_ng(a_Pri, a_Fmt, ap);
 	va_end(ap);
 }
 /*****************************************
@@ -121,7 +109,7 @@ void syslog_lg(int a_Pri, const char *a_Fmt, ...)
  * @post
  * @return
  */
-static int printDate_lg()
+static int printDate_ng()
 {
 	int result = 0;
 
@@ -139,7 +127,7 @@ static int printDate_lg()
  * @param a_ArgList
  */
 
-static void vsyslog_chk_lg(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_ArgList)
+void vsyslog_ng(int a_Pri, const char *a_Fmt, va_list a_ArgList)
 {
 	int result = 0;
 
@@ -156,7 +144,7 @@ static void vsyslog_chk_lg(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_A
 	//* Check for invalid bits.
 	if (a_Pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
 		syslog(INTERNALLOG,
-		    "syslog: unknown facility/priority: %x", a_Pri);
+				"syslog: unknown facility/priority: %x", a_Pri);
 		a_Pri &= LOG_PRIMASK|LOG_FACMASK;
 	}
 
@@ -171,86 +159,79 @@ static void vsyslog_chk_lg(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_A
 	/* Build the message in a memory-buffer stream.  */
 	hFileStream = open_memstream (&buf, &bufsize);
 	if (hFileStream == NULL)
-	  {
-	    /* We cannot get a stream.  There is not much we can do but
+	{
+		/* We cannot get a stream.  There is not much we can do but
 	       emitting an error messages.  */
-	    char numbuf[3 * sizeof (pid_t)];
-	    char *nump;
-	    char *endp = __stpcpy (failbuf, "out of memory [");
-	    pid_t pid = getpid ();
+		char numbuf[3 * sizeof (pid_t)];
+		char *nump;
+		char *endp = __stpcpy (failbuf, "out of memory [");
+		pid_t pid = getpid ();
 
-	    nump = numbuf + sizeof (numbuf);
-	    /* The PID can never be zero.  */
-	    do
-	      *--nump = '0' + pid % 10;
-	    while ((pid /= 10) != 0);
+		nump = numbuf + sizeof (numbuf);
+		/* The PID can never be zero.  */
+		do
+			*--nump = '0' + pid % 10;
+		while ((pid /= 10) != 0);
 
-//	    endp = mempcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
-	    endp = memcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
-	    *endp++ = ']';
-	    *endp = '\0';
-	    buf = failbuf;
-	    bufsize = endp - failbuf;
-	    msgoff = 0;
-	  }
+		//	    endp = mempcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
+		endp = memcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
+		*endp++ = ']';
+		*endp = '\0';
+		buf = failbuf;
+		bufsize = endp - failbuf;
+		msgoff = 0;
+	}
 	else
-	  {
-	    __fsetlocking (hFileStream, FSETLOCKING_BYCALLER);
-	    fprintf (hFileStream, "<%d>", a_Pri);
+	{
+		__fsetlocking (hFileStream, FSETLOCKING_BYCALLER);
+		fprintf (hFileStream, "<%d>", a_Pri);
 
-	    struct timeval tv = {0.0};
-	    struct tm *pTm = 0;
+		struct timeval tv = {0.0};
+		struct tm *pTm = 0;
 		//time_t now;
-	    //*****************************************************
-	    //*				DATE
-	    //*****************************************************
-	    result = gettimeofday(&tv,0);
-	    //(void) time (&now);
-	    now = tv.tv_sec;
-	    pTm = gmtime(&now);
+		//*****************************************************
+		//*				DATE
+		//*****************************************************
+		result = gettimeofday(&tv,0);
+		//(void) time (&now);
+		now = tv.tv_sec;
+		pTm = gmtime(&now);
 
-	    printf("tv_sec=%ld tv.tv_usec=%06ld \n",tv.tv_sec,tv.tv_usec);
-	    printf(" %02d:%02d:%02d\n",
-	    		pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
+		printf("tv_sec=%ld tv.tv_usec=%06ld \n",tv.tv_sec,tv.tv_usec);
+		printf(" %02d:%02d:%02d\n",
+				pTm->tm_hour,pTm->tm_min,pTm->tm_sec);
 
 
-//	    hFileStream->_IO_write_ptr += strftime (hFileStream->_IO_write_ptr,
-//					      hFileStream->_IO_write_end
-//					      - hFileStream->_IO_write_ptr,
-//					      "%h %e %T ",
-//						  localtime_r (&now, &now_tm));
-	    //_nl_C_locobj_ptr);
-	    msgoff = ftell (hFileStream);
+		//	    hFileStream->_IO_write_ptr += strftime (hFileStream->_IO_write_ptr,
+		//					      hFileStream->_IO_write_end
+		//					      - hFileStream->_IO_write_ptr,
+		//					      "%h %e %T ",
+		//						  localtime_r (&now, &now_tm));
+		//_nl_C_locobj_ptr);
+		msgoff = ftell (hFileStream);
 
-	    if (LogTag == NULL)
-	      LogTag = __progname;
-	    if (LogTag != NULL)
-	      fputs_unlocked (LogTag, hFileStream);
+		if (LogTag == NULL)
+			LogTag = __progname;
+		if (LogTag != NULL)
+			fputs_unlocked (LogTag, hFileStream);
 
-	    fprintf (hFileStream, " %02d:%02d:%02d.%06ld ",
-	    		pTm->tm_hour,pTm->tm_min,pTm->tm_sec,tv.tv_usec);
-	    //if (LogStat & LOG_PID)
-	    fprintf (hFileStream, " %d ", (int) getpid ());
-	    if (LogTag != NULL)
-	      {
-		putc_unlocked (':', hFileStream);
-		putc_unlocked (' ', hFileStream);
-	      }
+		fprintf (hFileStream, " %02d:%02d:%02d.%06ld ",
+				pTm->tm_hour,pTm->tm_min,pTm->tm_sec,tv.tv_usec);
+		//if (LogStat & LOG_PID)
+		fprintf (hFileStream, " %d ", (int) getpid ());
+		if (LogTag != NULL)
+		{
+			putc_unlocked (':', hFileStream);
+			putc_unlocked (' ', hFileStream);
+		}
 
-	    /* Restore errno for %m format.  */
-//	    __set_errno (saved_errno);
+		//		We have the header.  Print the user's format into the buffer
+			vfprintf (hFileStream, a_Fmt, a_ArgList);
 
-	    /* We have the header.  Print the user's format into the
-               buffer.  */
-	    if (a_Flag == -1)
-	      vfprintf (hFileStream, a_Fmt, a_ArgList);
-	    else
-	      __vfprintf_chk (hFileStream, a_Flag, a_Fmt, a_ArgList);
-
-	    /* Close the memory stream; this will finalize the data
-	       into a malloc'd buffer in BUF.  */
-	    fclose (hFileStream);
-	  }
+		//		Close the memory stream; this will finalize the data
+		//	       into a malloc'd buffer in BUF.
+		fclose (hFileStream);
+	}
 
 #if 0
 	//* Output to stderr if requested.
@@ -262,80 +243,76 @@ static void vsyslog_chk_lg(int a_Pri, int a_Flag, const char *a_Fmt, va_list a_A
 		v->iov_len = bufsize - msgoff;
 		/* Append a newline if necessary.  */
 		if (buf[bufsize - 1] != '\n')
-		  {
-		    ++v;
-		    v->iov_base = (char *) "\n";
-		    v->iov_len = 1;
-		  }
+		{
+			++v;
+			v->iov_base = (char *) "\n";
+			v->iov_len = 1;
+		}
 
-//		__libc_cleanup_push (free, buf == failbuf ? NULL : buf);
+		//		__libc_cleanup_push (free, buf == failbuf ? NULL : buf);
 
 		/* writev is a cancellation point.  */
 		(void)writev(STDERR_FILENO, iov, v - iov + 1);
 
-//		__libc_cleanup_pop (0);
+		//		__libc_cleanup_pop (0);
 	}
 #endif
 
 
 	/* Get connected, output the message to the local logger. */
 	if (!connected)
-		openlog_internal_lg(LogTag, LogStat | LOG_NDELAY, 0);
+		openlog_ng(LogTag, LogStat | LOG_NDELAY, 0);
 
 	/* If we have a SOCK_STREAM connection, also send ASCII NUL as
 	   a record terminator.  */
 	if (LogType == SOCK_STREAM)
-	  ++bufsize;
+		++bufsize;
 
 	if (!connected || send(LogFile, buf, bufsize, send_flags) < 0)
-	  {
-	    if (connected)
-	      {
-		/* Try to reopen the syslog connection.  Maybe it went
-		   down.  */
-		closelog_internal_lg ();
-		openlog_internal_lg(LogTag, LogStat | LOG_NDELAY, 0);
-	      }
+	{
+		if (connected)
+		{
+			// Try to reopen the syslog connection.  Maybe it went		   down.
+			closelog_ng ();
+			openlog_ng(LogTag, LogStat | LOG_NDELAY, 0);
+		}
 
-	    if (!connected || send(LogFile, buf, bufsize, send_flags) < 0)
-	      {
-		closelog_internal_lg ();	/* attempt re-open next time */
-		/*
-		 * Output the message to the console; don't worry
-		 * about blocking, if console blocks everything will.
-		 * Make sure the error reported is the one from the
-		 * syslogd failure.
-		 */
+		if (!connected || send(LogFile, buf, bufsize, send_flags) < 0)
+		{
+			closelog_ng ();	/* attempt re-open next time */
+			/*
+			 * Output the message to the console; don't worry
+			 * about blocking, if console blocks everything will.
+			 * Make sure the error reported is the one from the
+			 * syslogd failure.
+			 */
 #if 0
-		if (LogStat & LOG_CONS &&
-		    (fd = open(_PATH_CONSOLE, O_WRONLY|O_NOCTTY, 0)) >= 0)
-		  {
-		    dprintf (fd, "%s\r\n", buf + msgoff);
-		    (void)close(fd);
-		  }
+			if (LogStat & LOG_CONS &&
+					(fd = open(_PATH_CONSOLE, O_WRONLY|O_NOCTTY, 0)) >= 0)
+			{
+				dprintf (fd, "%s\r\n", buf + msgoff);
+				(void)close(fd);
+			}
 #endif
-	      }
-	  }
+		}
+	}
 
 
 	if (buf != failbuf)
 		free (buf);
 
 }
-//libc_hidden_def (__vsyslog_chk)
-
-static void vsyslog_lg(int pri, const char *fmt, va_list ap)
-{
-  vsyslog_chk_lg (pri, -1, fmt, ap);
-}
-//ldbl_hidden_def (__vsyslog, vsyslog)
-//ldbl_weak_alias (__vsyslog, vsyslog)
-
-//static struct sockaddr_un SyslogAddr;	/* AF_UNIX address of local logger */
-static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
-
-
-static void openlog_internal_lg(const char *ident, int logstat, int logfac)
+/***************
+ * @fn void openlog_ng(const char*, int, int)
+ * @brief
+ *
+ * @pre
+ * @post
+ * @param ident
+ * @param logstat
+ * @param logfac
+ */
+void openlog_ng(const char *ident, int logstat, int logfac)
 {
 	if (ident != NULL)
 		LogTag = ident;
@@ -348,36 +325,36 @@ static void openlog_internal_lg(const char *ident, int logstat, int logfac)
 	{
 		if (LogFile == -1)
 		{
-//			SyslogAddr.sun_family = AF_UNIX;
-//			(void)strncpy(SyslogAddr.sun_path, _PATH_LOG,
-//				      sizeof(SyslogAddr.sun_path));
+			//			SyslogAddr.sun_family = AF_UNIX;
+			//			(void)strncpy(SyslogAddr.sun_path, _PATH_LOG,
+			//				      sizeof(SyslogAddr.sun_path));
 
 			SyslogAddr.sa_family = AF_UNIX;
 			(void)strncpy(SyslogAddr.sa_data, _PATH_LOG,
-				      sizeof(SyslogAddr.sa_data));
+					sizeof(SyslogAddr.sa_data));
 
 			if (LogStat & LOG_NDELAY) {
-			  LogFile = socket(AF_UNIX, LogType | SOCK_CLOEXEC, 0);
-			  if (LogFile == -1)
-			    return;
+				LogFile = socket(AF_UNIX, LogType | SOCK_CLOEXEC, 0);
+				if (LogFile == -1)
+					return;
 			}
 		}
 		if (LogFile != -1 && !connected)
 		{
-//			int old_errno = errno;
+			//			int old_errno = errno;
 			if (connect(LogFile, &SyslogAddr, sizeof(SyslogAddr))
-			    == -1)
+					== -1)
 			{
 				int saved_errno = errno;
 				int fd = LogFile;
 				LogFile = -1;
 				(void)close(fd);
-//				__set_errno (old_errno);
+				//				__set_errno (old_errno);
 				if (saved_errno == EPROTOTYPE)
 				{
 					/* retry with the other type: */
 					LogType = (LogType == SOCK_DGRAM
-						   ? SOCK_STREAM : SOCK_DGRAM);
+							? SOCK_STREAM : SOCK_DGRAM);
 					++retry;
 					continue;
 				}
@@ -388,51 +365,24 @@ static void openlog_internal_lg(const char *ident, int logstat, int logfac)
 	}
 }
 
-static void openlog_lg (const char *ident, int logstat, int logfac)
+
+void closelog_ng (void)
 {
-  /* Protect against multiple users and cancellation.  */
-//  __libc_cleanup_push (cancel_handler, NULL);
-//  __libc_lock_lock (syslog_lock);
+	if (!connected)
+		return;
 
-  openlog_internal_lg (ident, logstat, logfac);
+	close (LogFile);
+	LogFile = -1;
+	connected = 0;
 
-//  __libc_cleanup_pop (1);
+	LogTag = NULL;
+	LogType = SOCK_DGRAM; /* this is the default */
+
 }
 
-//#ifndef NO_SIGPIPE
-//static void
-//sigpipe_handler (int signo)
-//{
-//  closelog_internal ();
-//}
-//#endif
-
-static void closelog_internal_lg (void)
-{
-  if (!connected)
-    return;
-
-  close (LogFile);
-  LogFile = -1;
-  connected = 0;
-}
-
-static void closelog_lg (void)
-{
-  /* Protect against multiple users and cancellation.  */
-//  __libc_cleanup_push (cancel_handler, NULL);
-//  __libc_lock_lock (syslog_lock);
-
-  closelog_internal_lg ();
-  LogTag = NULL;
-  LogType = SOCK_DGRAM; /* this is the default */
-
-  /* Free the lock.  */
-//  __libc_cleanup_pop (1);
-}
-
-/* setlogmask -- set the log mask level */
-static int setlogmask_lg (int pmask)
+#if 0
+// setlogmask -- set the log mask level
+static int setlogmask_ng (int pmask)
 {
 	int omask;
 
@@ -441,3 +391,4 @@ static int setlogmask_lg (int pmask)
 		LogMask = pmask;
 	return (omask);
 }
+#endif

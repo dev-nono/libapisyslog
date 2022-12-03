@@ -10,7 +10,20 @@
 
 #include <sys/syslog.h>
 
-// undef syslog
+//*******************
+//
+//*******************
+#undef syslog
+#undef openlog
+#undef closelog
+#undef vsyslog
+
+#define	syslog 		syslog_ng
+#define	openlog		openlog_ng
+#define	closelog	closelog_ng
+#define	vsyslog		vsyslog_ng
+
+
 
 /*************************************************
  DATE 	TIMESTAMP 			HOSTNAME  	USER PROC_NAME PID	MSG
@@ -35,12 +48,19 @@
 #define SYSLOG_PID			(1<<6)
 #define SYSLOG_FUNCTION		(1<<8)
 
-#define SDYSLOG_NONE "-"
+#define SYSLOG_NONE 	"-"
+#define SYSLOG_IN_STR	"_IN"
+#define SYSLOG_OUT_STR	"_OUT"
 
+//void syslog_ng(int pri, const char *fmt, ...);
+//void syslog31(int a_LogOptions, int a_Pri, const char *a_Fmt, ...);
+//void syslog32(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
 
-void syslog_lg(int pri, const char *fmt, ...);
-void syslog31(int a_LogOptions, int a_Pri, const char *a_Fmt, ...);
-void syslog32(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
+void openlog_ng(const char *ident, int option, int facility);
+void syslog_ng(int priority, const char *format, ...);
+void closelog_ng(void);
+void vsyslog_ng(int priority, const char *format, va_list ap);
+
 
 
 
