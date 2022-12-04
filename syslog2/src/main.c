@@ -14,15 +14,21 @@
 
 #include "tst_time.h"
 
+int syslog_IN(toto_1, int a_ii,int a_bb)
+
+
+syslog_OUT(toto_1)
+
 int main(int argc, char **argv)
 {
 
-//	time_dateNano(argc,argv);
+	//	time_dateNano(argc,argv);
 
-	syslog(0,"*************");
+	syslog(LOG_DEBUG,"%s","syslog(LOG_DEBUG,'%s','coucou')");
 
-	syslog_ng(0,"*************");
-
+	syslog_ng(SYSLOG_DEF_OPTION ,0 , LOG_DEBUG, "syslog_ng(SYSLOG_DEF_OPTION ,0 , LOG_DEBUG, '...');");
+	syslog_ng(SYSLOG_DEF_OPTION ,SYSLOG_NONE , LOG_DEBUG, "syslog_ng(SYSLOG_DEF_OPTION ,SYSLOG_NONE , LOG_DEBUG, '...');");
+	syslog_ng(SYSLOG_DEF_OPTION ,__FUNCTION__, LOG_DEBUG, "syslog_ng(SYSLOG_DEF_OPTION ,%s , LOG_DEBUG, '...');",__FUNCTION__);
 
 	return EXIT_SUCCESS;
 }

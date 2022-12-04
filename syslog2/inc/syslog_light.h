@@ -18,10 +18,10 @@
 #undef closelog
 #undef vsyslog
 
-#define	syslog 		syslog_ng
-#define	openlog		openlog_ng
-#define	closelog	closelog_ng
-#define	vsyslog		vsyslog_ng
+//#define	syslog 		syslog_ng
+//#define	openlog		openlog_ng
+//#define	closelog	closelog_ng
+//#define	vsyslog		vsyslog_ng
 
 
 
@@ -42,25 +42,38 @@
 
 #define SYSLOG_HOST			(1<<5)
 #define SYSLOG_USER			(1<<6)
-#define SYSLOG_PROCESS		(1<<6)
-#define SYSLOG_PID			(1<<6)
-#define SYSLOG_FUNCTION		(1<<8)
+#define SYSLOG_PROCESS		(1<<7) // process name
+#define SYSLOG_PID			(1<<8)
+#define SYSLOG_TID			(1<<9)
+#define SYSLOG_FUNCTION		(1<<10)
 
 #define SYSLOG_NONE 	"-"
 #define SYSLOG_IN_STR	"_IN"
 #define SYSLOG_OUT_STR	"_OUT"
 
+#define SYSLOG_DEF_OPTION	(SYSLOG_NANO|SYSLOG_PID|SYSLOG_TID)
 
 void openlog_ng(const char *ident, int option, int facility);
 
-void syslog_ng(int priority, const char *format, ...);
-void syslog2_ng(int a_LogOptions, int a_Pri, const char *a_Fmt, ...);
-void syslog3_ng(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
+void syslog_ng(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
 
 void closelog_ng(void);
 void vsyslog_ng(int priority, const char *format, va_list ap);
 
 
+#define syslog(a_priority, a_format...)									syslog_ng( SYSLOG_DEF_OPTION ,0, a_priority, a_format)
+#define syslog2(a_logOptions,a_functionName,a_priority, a_format...)	syslog_ng( a_logOptions,a_functionName , a_priority, a_format)
 
+#define syslog_IN(a_funcName,...)	\
+	a_funcName(__VA_ARGS__) \
+	{\
+	int result = 0;\
+	syslog_ng(SYSLOG_DEF_OPTION|SYSLOG_IN,#a_funcName,LOG_DEBUG,"");
+
+
+#define syslog_OUT(a_funcName,...)	\
+	syslog_ng(SYSLOG_DEF_OPTION|SYSLOG_OUT,#a_funcName,LOG_DEBUG,"result = %d",result); \
+	return result; \
+	}
 
 #endif /* SYSLOG_LIGHT_H_ */

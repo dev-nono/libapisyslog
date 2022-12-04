@@ -78,7 +78,7 @@ static int printDate_ng();
 # define send_flags 0
 #endif
 
-
+#if 0
 /*
  * syslog, vsyslog --
  *	print message on log file; output is intended for syslogd(8).
@@ -100,6 +100,27 @@ void syslog_ng(int a_Pri, const char *a_Fmt, ...)
 	va_start(ap, a_Fmt);
 	vsyslog_ng(a_Pri, a_Fmt, ap);
 	va_end(ap);
+}
+#endif
+/************************************
+ * *@fn void syslog3_ng(int, const char*, int, const char*, ...)
+ * @brief
+ *
+ * @pre
+ * @post
+ * @param a_LogOptions
+ * @param a_Function
+ * @param a_Pri
+ * @param a_Fmt
+ */
+void syslog_ng(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, a_Fmt);
+	vsyslog_ng(a_Pri, a_Fmt, ap);
+	va_end(ap);
+
 }
 /*****************************************
  * @fn int printDate()
