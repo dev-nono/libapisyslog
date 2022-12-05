@@ -55,10 +55,10 @@
 
 void openlog_ng(const char *ident, int option, int facility);
 
-void syslog_ng(int a_LogOptions,const char* a_Function,int a_Pri, const char *a_Fmt, ...);
+void syslog_ng(int a_LogOptions,const char* a_FunctionName,int a_Pri, const char *a_Fmt, ...);
 
 void closelog_ng(void);
-void vsyslog_ng(int priority, const char *format, va_list ap);
+void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, const char *a_format, va_list a_ap);
 
 
 #define syslog(a_priority, a_format...)									syslog_ng( SYSLOG_DEF_OPTION ,0, a_priority, a_format)

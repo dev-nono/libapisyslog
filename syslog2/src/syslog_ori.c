@@ -48,7 +48,7 @@ static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) 3/18/94";
 #include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
-//#include <libc-lock.h>
+#include <libc-lock.h>
 #include <signal.h>
 #include <locale.h>
 
@@ -434,4 +434,5 @@ setlogmask (int pmask)
 		LogMask = pmask;
 	return (omask);
 }
+
 #endif // if 0

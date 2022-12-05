@@ -18,6 +18,9 @@
 
 int time_dateNano(int argc, char **argv)
 {
+	(void) argc;
+	(void) argv;
+
 	int result = 0;
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);

@@ -22,6 +22,8 @@ syslog_OUT(toto_1)
 int main(int argc, char **argv)
 {
 
+	(void) argc;
+	(void) argv;
 	//	time_dateNano(argc,argv);
 
 	syslog(LOG_DEBUG,"%s","syslog(LOG_DEBUG,'%s','coucou')");
