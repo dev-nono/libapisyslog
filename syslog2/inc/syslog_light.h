@@ -58,11 +58,13 @@ void openlog_ng(const char *ident, int option, int facility);
 void syslog_ng(int a_LogOptions,const char* a_FunctionName,int a_Pri, const char *a_Fmt, ...);
 
 void closelog_ng(void);
+
 void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, const char *a_format, va_list a_ap);
 
 
-#define syslog(a_priority, a_format...)									syslog_ng( SYSLOG_DEF_OPTION ,0, a_priority, a_format)
-#define syslog2(a_logOptions,a_functionName,a_priority, a_format...)	syslog_ng( a_logOptions,a_functionName , a_priority, a_format)
+#define syslog(a_priority, a_format...)									syslog_ng( SYSLOG_DEF_OPTION ,0, a_priority, a_format);
+#define vsyslog(a_priority,a_format,a_ap...) 							vsyslog_ng(SYSLOG_DEF_OPTION,0,a_priority, a_format, a_ap);
+
 
 #define syslog_IN(a_funcName,...)	\
 	a_funcName(__VA_ARGS__) \

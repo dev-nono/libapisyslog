@@ -200,7 +200,7 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 	time_t now;
 	int fd;
 	FILE *hFileStream;
-	char *buf = 0;
+	char *bufToPrint = 0;
 	size_t bufsize = 0;
 	size_t msgoff;
 	char failbuf[3 * sizeof (pid_t) + sizeof "out of memory []"];
@@ -222,7 +222,8 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 		a_priority |= g_localData.LogFacility;
 
 	// Build the message in a memory-buffer stream.
-	hFileStream = open_memstream (&buf, &bufsize);
+	hFileStream = open_memstream (&bufToPrint, &bufsize);
+#if 0
 	if (hFileStream == NULL)
 	{
 		// We cannot get a stream.  There is not much we can do but
@@ -242,11 +243,12 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 		endp = memcpy (endp, nump, (numbuf + sizeof (numbuf)) - nump);
 		*endp++ = ']';
 		*endp = '\0';
-		buf = failbuf;
+		bufToPrint = failbuf;
 		bufsize = endp - failbuf;
 		msgoff = 0;
 	}
 	else
+#endif
 	{
 		__fsetlocking (hFileStream, FSETLOCKING_BYCALLER);
 		fprintf (hFileStream, "<%d>", a_priority);
@@ -296,6 +298,8 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 		//		Close the memory stream; this will finalize the data
 		//	       into a malloc'd buffer in BUF.
 		fclose (hFileStream);
+
+		printf("%s\n",bufToPrint);
 	}
 
 #if 0
@@ -304,10 +308,10 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 		struct iovec iov[2];
 		struct iovec *v = iov;
 
-		v->iov_base = buf + msgoff;
+		v->iov_base = bufToPrint + msgoff;
 		v->iov_len = bufsize - msgoff;
 		// Append a newline if necessary.
-		if (buf[bufsize - 1] != '\n')
+		if (bufToPrint[bufsize - 1] != '\n')
 		{
 			++v;
 			v->iov_base = (char *) "\n";
@@ -333,7 +337,7 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 	if (g_localData.LogType == SOCK_STREAM)
 		++bufsize;
 
-	if (!g_localData.connected || send(g_localData.LogFile, buf, bufsize, send_flags) < 0)
+	if (!g_localData.connected || send(g_localData.LogFile, bufToPrint, bufsize, send_flags) < 0)
 	{
 		if (g_localData.connected)
 		{
@@ -342,7 +346,7 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 			openlog_ng(g_localData.LogTag, g_localData.LogStat | LOG_NDELAY, 0);
 		}
 
-		if (!g_localData.connected || send(g_localData.LogFile, buf, bufsize, send_flags) < 0)
+		if (!g_localData.connected || send(g_localData.LogFile, bufToPrint, bufsize, send_flags) < 0)
 		{
 			closelog_ng ();	/* attempt re-open next time */
 			/*
@@ -355,7 +359,7 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 			if (g_localData.LogStat & LOG_CONS &&
 					(fd = open(_PATH_CONSOLE, O_WRONLY|O_NOCTTY, 0)) >= 0)
 			{
-				dprintf (fd, "%s\r\n", buf + msgoff);
+				dprintf (fd, "%s\r\n", bufToPrint + msgoff);
 				(void)close(fd);
 			}
 #endif
@@ -363,8 +367,8 @@ void vsyslog_ng(int a_LogOptions,const char* a_FunctionName,int a_priority, cons
 	}
 
 
-	if (buf != failbuf)
-		free (buf);
+	if (bufToPrint != failbuf)
+		free (bufToPrint);
 
 }
 
